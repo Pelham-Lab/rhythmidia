@@ -1,3 +1,5 @@
+![chronidia](chronidia_logo.png)
+
 Chronidia
 ==============================
 [//]: # (Badges)
