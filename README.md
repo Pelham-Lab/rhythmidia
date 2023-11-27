@@ -1,10 +1,10 @@
-![chronidia](chronidia_logo.png)
+![rhythmidia](rhythmidia_logo.png)
 
-Chronidia
+Rhythmidia
 ==============================
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/chronidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/chronidia/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Chronidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Chronidia/branch/main)
+[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)
 
 
 Race tube image analysis and circadian period elucidation in Python.

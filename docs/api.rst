@@ -4,4 +4,4 @@ API Documentation
 .. autosummary::
    :toctree: autosummary
 
-   chronidia.canvas
+   rhythmidia.canvas

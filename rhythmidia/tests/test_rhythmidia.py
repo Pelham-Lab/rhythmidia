@@ -1,5 +1,5 @@
 """
-Unit and regression test for the chronidia package.
+Unit and regression test for the rhythmidia package.
 """
 
 # Import package, test suite, and other packages as needed
@@ -7,9 +7,9 @@ import sys
 
 import pytest
 
-import chronidia
+import rhythmidia
 
 
-def test_chronidia_imported():
+def test_rhythmidia_imported():
     """Sample test, will always pass so long as import statement worked."""
-    assert "chronidia" in sys.modules
+    assert "rhythmidia" in sys.modules

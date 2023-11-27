@@ -18,8 +18,8 @@ from scipy.signal import lombscargle
 from scipy.signal import periodogram
 import webbrowser
 
-screen_width = pyautogui.size().width  # Get screen width
-screen_height = pyautogui.size().height  # Get screen height
+screenWidth = pyautogui.size().width  # Get screen width
+screenHeight = pyautogui.size().height  # Get screen height
 numpy.set_printoptions(threshold=sys.maxsize)
 csv.field_size_limit(sys.maxsize)
 
@@ -41,39 +41,22 @@ meanTubeSlope = None  # Mean slope of horizontal lines separating tubes
 timeMarkLines = []  # Vertical lines where tubes are marked for time in form [x, ycenter, tube]
 bandLines = []  # Locations of conidial bands in form [x, ycenter, tube]
 densityProfiles = []  # Density profiles of tubes in b/w image format
-tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densProfile, growthRate, tubeRange, timeMarks, bandMarks]
+tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densityProfile, growthRate, tubeRange, timeMarks, bandMarks]
 canvas = None  # Plot entity
 keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Shift, Command, S, O, P, D, H
-plotAxes = []
+plotsInfo = []
 
 
-def openSetup():  # Tasks to run on opening app
-    """Tasks to run open opening the application. Reads in local parameters file to get user-defined settings, and preselects home tab."""
-    global appParameters
-    global workingDir
-
-    with open("./parameters.txt", newline="") as parametersFile:  # Open local parameters.txt file
-        reader = csv.reader(parametersFile, delimiter="=")  # Define csv reader
-        for line in reader:  # For each line in parameters.txt
-            appParameters[line[0]] = line[1]  # Populate appropriate element of parameters dictionary
-    if (appParameters["workingDir"] == "" or not (os.path.exists(appParameters["workingDir"]))):  # If a working directory is not already specified in parameters, or points to a nonexistent directory
-        setWorkDir()  # Prompt user to set a working directory
-    else:  # Otherwise
-        workingDir = appParameters["workingDir"]  # Set working directory to directory specified in parameters dictionary
-    experFrame.hide()  # Hide experiment tab
-    homeFrame.show()  # Show home tab
-
-
-def setWorkDir():
+def setWorkingDirectory():
     """Prompt user to set a working directory for the application, and save this to the local parameters file."""
     global appParameters
     global workingDir
     workingDir = app.select_folder(title="Please select working directory:", folder="/")  # Set working directory variable to user-specified directory via file selection popup
     appParameters["workingDir"] = workingDir  # Populate parameters dictionary with user-specified working directory
-    updateParams()
+    updateAppParameters()
 
 
-def updateParams():
+def updateAppParameters():
     global appParameters
     
     with open("./parameters.txt", newline="", mode="w") as parametersFile:  # Open local parameters.txt file
@@ -82,19 +65,19 @@ def updateParams():
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
 
 
-def openExp():  # Open an experiment file
+def openExperimentFile(reopen=False):  # Open an experiment file
     """Open an existing experiment file containing data from past images/tubes. Populate appropriate variables, including tubesMaster, with relevant information."""
     global openFile
     global workingDir
     global tubesMaster
 
-    cancelRT()  # Zero out any existing information from a different open file or a newly analyzed race tube image
+    cancelImageAnalysis()  # Zero out any existing information from a different open file or a newly analyzed race tube image
     tubesMaster = []  # Blank out master tube list in preparation for population from opened file
-    if openFile == "":
+    if openFile == "" or reopen is False:
         openFile = app.select_file(
             title="Select experiment file",
             folder=workingDir,
-            filetypes=[["CronoPy Experiment", "*.cpyn"]],
+            filetypes=[["Rhythmidia Experiment", "*.rmex"]],
             save=False,
             filename="",
         )  # Prompt user by popup to select experiment file from working directory and save name as openFile
@@ -170,28 +153,28 @@ def openExp():  # Open an experiment file
                 bandMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
             parsedTube.append(bandMarks)  # Add parsed band marks values to parsed tube data
             tubesMaster.append(parsedTube)  # Add parsed tube data to master list of tubes
-        populateExper(tubesMaster)  # Populate experiment data table
-        popStatAnal()  # Populate statistical analysis frame
-        popPlotTubes()  # Populate plot data frame
+        populateExperimentDataTable(tubesMaster)  # Populate experiment data table
+        populateStatisticalAnalysisLists()  # Populate statistical analysis frame
+        populatePlotTubeSelectionLists()  # Populate plot data frame
 
 
-def saveExp():  # Save current experiment
+def saveExperimentFile():  # Save current experiment
     """Save experiment file to existing file, or prompt user to save as new file if not editing existing experiment file."""
     global openFile
     global workingDir
     global tubesMaster
 
     if openFile == "":  # If no currently open file
-        saveAs("")  # Prompt user to save as new file
+        saveExperimentFileAs("")  # Prompt user to save as new file
     else:  # If a file is already open
         with open(openFile, newline="", mode="w") as experimentFile:  # Open current experiment file
             writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer
             for tube in tubesMaster:  # For each tube in master tube list
                 writer.writerow(tube)  # Write new line for tube to experiment file
-        openExp()  # Open current experiment again to update application
+        openExperimentFile(True)  # Open current experiment again to update application
 
 
-def saveAs(name=""):  # Save current experiment as new experiment file
+def saveExperimentFileAs(name=""):  # Save current experiment as new experiment file
     """Prompt user to provide a file name to save current data as a new experiment file."""
     global openFile
     global workingDir
@@ -199,31 +182,31 @@ def saveAs(name=""):  # Save current experiment as new experiment file
     openFile = app.select_file(
         title="Save as...",
         folder=workingDir,
-        filetypes=[["Chronidia Experiment", "*.cpyn"]],
+        filetypes=[["Rhythmidia Experiment", "*.rmex"]],
         save=True,
         filename=name,
     )  # Prompt user to create a new file name with popup, and save name as openFile
     if not (openFile == ""):  # If file name is not left blank
-        saveExp()  # Save experiment as chosen file name
+        saveExperimentFile()  # Save experiment as chosen file name
 
 
-def selectHome():  # Swap to home tab
+def selectHomeTab():  # Swap to home tab
     """Select home tab."""
-    if homeFrame.visible is False:  # If home tab is not already selected
-        experFrame.hide()  # Hide experiment tab
-        homeFrame.show()  # Show home tab
+    if homeTabFrame.visible is False:  # If home tab is not already selected
+        experimentTabFrame.hide()  # Hide experiment tab
+        homeTabFrame.show()  # Show home tab
     app.update()  # Update app object
 
 
-def selectExper():  # Swap to experiments tab
+def selectExperTab():  # Swap to experiments tab
     """Select experiment tab."""
-    if experFrame.visible is False:  # If experiment tab not already selected
-        homeFrame.hide()  # Hide home tab
-        experFrame.show()  # Show experiment tab
+    if experimentTabFrame.visible is False:  # If experiment tab not already selected
+        homeTabFrame.hide()  # Hide home tab
+        experimentTabFrame.show()  # Show experiment tab
     app.update()  # Update app object
 
 
-def fUploadRT():  # Prompt file upload of race tube image
+def uploadRaceTubeImage():  # Prompt file upload of race tube image
     """Prompt user to upload a new race tube image, and display it in the image frame."""
     global rawImage
     global imageName
@@ -241,29 +224,29 @@ def fUploadRT():  # Prompt file upload of race tube image
     )  # Prompt user to select a .tif image in the working directory to analyze, and set file name as imageName
     rawImage = Image.open(imageName).resize((1160, 400))  # Open raw image file as 1160x400px image object
     rightImage = rawImage  # Set intermediate image to raw image
-    dispRTImage(rightImage)  # Display race tube image
-    lockButt.enable()  # Enable button to lock image and analyze
-    rotateRtButt.enable()  # Enable button to rotate image 90 degrees
-    resetButt.enable()  # Enable button to reset analysis
+    displayRaceTubeImage(rightImage)  # Display race tube image
+    lockAndAnalyzeButton.enable()  # Enable button to lock image and analyze
+    rotateRaceTubeImageButton.enable()  # Enable button to rotate image 90 degrees
+    restRaceTubeImageAnalysisButton.enable()  # Enable button to reset analysis
 
 
-def fRotateRT():  # Rotate race tube image clockwise
+def rotateRaceTubeImage():  # Rotate race tube image clockwise
     """Rotate current image 90 degrees clockwise."""
     global rawImage
     global rotateDeg
 
     rotateDeg += 90  # Increment rotation angle by 90 degrees clockwise
     rightImage = rawImage.rotate(rotateDeg, expand=1).resize((1160, 400))  # Set intermediate image to raw image rotated by rotateDeg degrees clockwise
-    dispRTImage(rightImage)  # Display race tube image
+    displayRaceTubeImage(rightImage)  # Display race tube image
 
 
-def dispRTImage(image):
+def displayRaceTubeImage(image):
     """Display race tube image."""
-    imageDraw.clear()  # Clear image frame
-    imageDraw.image(0, 0, image)  # Display intermediate image in image frame
+    homeTabRaceTubeImageObject.clear()  # Clear image frame
+    homeTabRaceTubeImageObject.image(0, 0, image)  # Display intermediate image in image frame
 
 
-def fLockRT():
+def lockAndAnalyzeRaceTubeImage():
     """Lock image in current rotation and begin analysis prompts."""
     global rotateDeg
     global rawImage
@@ -271,21 +254,21 @@ def fLockRT():
     global tubeLength
 
     # Lock
-    uploadRtButt.disable()  # Disable upload image button
-    rotateRtButt.disable()  # Disable rotate image button
-    rtLength.disable()  # Disable tube length input
-    lockButt.disable()  # Disable lock and analyze button
-    proceedButt.enable()  # Enable proceed button
-    rescanButt.enable() # Enable rescan button
+    uploadRaceTubeImageButton.disable()  # Disable upload image button
+    rotateRaceTubeImageButton.disable()  # Disable rotate image button
+    raceTubeLengthTextBox.disable()  # Disable tube length input
+    lockAndAnalyzeButton.disable()  # Disable lock and analyze button
+    proceedButton.enable()  # Enable proceed button
+    rescanHorizontalLinesButton.enable() # Enable rescan button
     # Analyze
     finalDeg = 90 * ((rotateDeg / 90) % 4)  # Set final rotation angle to simplified rotation angle
     finalImage = rawImage.rotate(finalDeg, expand=1).resize((1160, 400))  # Set final image to raw image rotated by final rotation angle
-    tubeLength = rtLength.value  # Set tube length to value in input box
-    getMarkInfo()  # Save tube mark time values to variable
-    horizAnalyze()  # Begin tube boundary analysis
+    tubeLength = raceTubeLengthTextBox.value  # Set tube length to value in input box
+    getTimeMarkTableData()  # Save tube mark time values to variable
+    identifyHorizontalLines()  # Begin tube boundary analysis
 
 
-def cancelRT():
+def cancelImageAnalysis():
     """Cancel current race tube image being analyzed and zero out all relevant global variables."""
     global analState
     global rawImage
@@ -303,27 +286,27 @@ def cancelRT():
     global densityProfiles
 
     analState = -1  # Set analysis state to -1
-    imageDraw.clear()  # Clear image frame
+    homeTabRaceTubeImageObject.clear()  # Clear image frame
     rawImage, rightImage, finalImage = None, None, None  # Zero out image variables
     imageName = ""  # Zero out current image name
     prelimContents = [["Tube", "# Marks", "Average Period (hrs)"]]  # Reset preliminary data contents to headers
-    prelimText.value = ""  # Zero out preliminary data text box
+    homeTabPreliminaryDataAnalysisTextBox.value = ""  # Zero out preliminary data text box
     tubeLength = -1  # Zero out tube length
     tubeBounds = []  # Zero out tube boundaries list
     meanTubeWidth = -1  # Zero out mean tube width
     meanTubeSlope = None  # Zero out mean horizontal slope
     horizontalLines, timeMarkLines, bandLines = [], [], []  # Zero out horizontal, time mark, and band line lists
     densityProfiles = []  # Zero out densitometry
-    consoleText.value = ""  # Zero out console text box
+    homeTabConsoleTextBox.value = ""  # Zero out console text box
 
-    uploadRtButt.enable()  # Enable upload race tube image button
-    rotateRtButt.disable()  # Disable rotate image button
-    rtLength.enable()  # Enable race tube length text box
-    lockButt.disable()  # Disable lock and analyze button
-    proceedButt.disable()  # Disable proceed button
+    uploadRaceTubeImageButton.enable()  # Enable upload race tube image button
+    rotateRaceTubeImageButton.disable()  # Disable rotate image button
+    raceTubeLengthTextBox.enable()  # Enable race tube length text box
+    lockAndAnalyzeButton.disable()  # Disable lock and analyze button
+    proceedButton.disable()  # Disable proceed button
 
 
-def prelimUpdate():
+def updatePreliminaryDataDisplay():
     """Update preliminary data text box."""
     global prelimContents
 
@@ -332,10 +315,10 @@ def prelimUpdate():
         text = (text + line[0] + " " * (7 - len(line[0])))  # Append tube number and spacing to text
         text = (text + line[1] + " " * (10 - len(line[1])))  # Append number of time marks and spacing to text
         text = (text + line[2] + " " * (23 - len(line[2])) + "\n")  # Append manually calculated period and spacing and newline to text
-    prelimText.value = text  # Set preliminary data text box to text variable
+    homeTabPreliminaryDataAnalysisTextBox.value = text  # Set preliminary data text box to text variable
 
 
-def horizAnalyze():
+def identifyHorizontalLines():
     """Analyze horizontal boundaries of tubes in image."""
     global finalImage
     global analState
@@ -373,10 +356,10 @@ def horizAnalyze():
             horizontalLines.append([horizontalLineSlopes[line], horizontalLineIntercepts[line]])  # Add line to accepted horizontal lines
     drawLines()  # Add lines to image
     analState = 2  # Set analysis state to 2
-    consoleText.value = "Click a point on the image to add or remove race tube boundary lines. Please be sure to include lines a verytop and bottom of image. When satisfied, click the Proceed button."  # Set console text to horizontal line instructions
+    homeTabConsoleTextBox.value = "Click a point on the image to add or remove race tube boundary lines. Please be sure to include lines a verytop and bottom of image. When satisfied, click the Proceed button."  # Set console text to horizontal line instructions
 
 
-def identTubes():
+def identifyRaceTubeBounds():
     """Identify boundaries of tubes in image based on horizontal lines."""
     global finalImage
     global analState
@@ -388,8 +371,8 @@ def identTubes():
     analState = 3  # Set analysis state to 3
     for line in range(1, len(horizontalLines)):  # For gap between horizontal lines
         prelimContents.append([str(line), "", ""])  # Add a row to preliminary data contents list
-    prelimUpdate()  # Update preliminary contents text box
-    consoleText.value = ("Identifying race tube regions...")  # Set console box text to analysis step description
+    updatePreliminaryDataDisplay()  # Update preliminary contents text box
+    homeTabConsoleTextBox.value = ("Identifying race tube regions...")  # Set console box text to analysis step description
     horizontalLines.sort(key=lambda x: x[1])  # Sort horizontal lines by y value of intercepts (ie top to bottom of image)
     tubeCount = (len(horizontalLines) - 1)  # Set number of tubes to one less than number of boundary lines
     tubeWidths = []  # Blank list of tube widths
@@ -402,10 +385,10 @@ def identTubes():
             tubeWidths.append(yMax - yMin)  # Add difference in y bounds to widths list
         tubeBounds.append(pairs)  # Add ranges for tube to list of tube ranges
     meanTubeWidth = numpy.mean(tubeWidths)  # Set mean tube width to mean of tube widths
-    vertAnalyze()  # Begin analysis of time mark locations
+    identifyTimeMarks()  # Begin analysis of time mark locations
 
 
-def vertAnalyze():
+def identifyTimeMarks():
     """Analyze positions of vertical time marks in tubes."""
     global finalImage
     global analState
@@ -423,7 +406,7 @@ def vertAnalyze():
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeWidth = tube[0][1] - tube[0][0]  # Record width of current tube at left end
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube within tubeBounds
-        densityProfile = brightScan(editedImage, tube=tubeBounds.index(tube), linewidth=int(tubeWidth - 5))  # Create density profile of current tube
+        densityProfile = generateDensityProfile(editedImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
         densityProfileSmooth = savgol_filter(densityProfile, window_length=30, polyorder=3, mode="interp")  # Create Savitzky-Golay smoothed density profile of marks-corrected dataset
         peakIndices = find_peaks(densityProfileSmooth, distance=25, threshold=(None, None), prominence=5, wlen=300)[0].tolist()  # Get indices of local maxima of smoothed density profile
         for peakIndex in peakIndices:  # For each peak index
@@ -443,10 +426,10 @@ def vertAnalyze():
                 timeMarkLines.append([peakX, peakY, tubeNumber])  # Add time mark to list of time mark lines
         drawLines()  # Add lines to image
     analState = 5  # Set analysis state to 5
-    consoleText.value = "Click a point on the image to add or remove time marks. Please be sure to mark the start point. When satisfied, click the Proceed button."  # Add directions to console
+    homeTabConsoleTextBox.value = "Click a point on the image to add or remove time marks. Please be sure to mark the start point. When satisfied, click the Proceed button."  # Add directions to console
 
 
-def brightScan(image, tubeNumber, profileWidth):
+def generateDensityProfile(image, tubeNumber, profileWidth):
     """Create a density profile of a given tube within a given image given a profile line width."""
     global tubeBounds
     
@@ -461,7 +444,7 @@ def brightScan(image, tubeNumber, profileWidth):
     return densityProfile  # Return densitometry profile
 
 
-def bandAnalyze():
+def identifyBanding():
     """Analyze locations of conidial banding within tubes in current image."""
     global finalImage
     global analState
@@ -481,7 +464,7 @@ def bandAnalyze():
             if line[2] == tube:  # If line y is in current tube
                 numberOfMarks += 1  # Increment number of marks in tube by 1
         prelimContents[tube + 1][1] = str(numberOfMarks)  # Add number of marks to appropriate line of preliminary data contents list
-    prelimUpdate()  # Update preliminary data text box
+    updatePreliminaryDataDisplay()  # Update preliminary data text box
     contraster = ImageEnhance.Contrast(finalImage.convert("L"))  # Define contraster of numpy array of greyscale final image
     editedImage = numpy.array(contraster.enhance(3))  # Set numpy image array to contrast level 3
     originalImage = numpy.array(finalImage.convert("L"))  # Set numpy image array for precontrast ('original') image
@@ -489,8 +472,8 @@ def bandAnalyze():
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube in tubeBounds
-        densityProfile = brightScan(editedImage, tube=tubeBounds.index(tube), linewidth=int(tubeWidth - 5))  # Create density profile of current tube
-        densityProfileOriginal = brightScan(originalImage, tube=tubeBounds.index(tube), linewidth=int(tubeWidth - 5))  # Create density profile of current tube
+        densityProfile = generateDensityProfile(editedImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
+        densityProfileOriginal = generateDensityProfile(originalImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
         densityProfiles.append(densityProfileOriginal)  # Add to global density profile list
         densityProfileNoTimeMarks = densityProfile  # Remove dips due to time marks from density data
         for line in timeMarkLines:  # For each time mark (make densityProfileNoTimeMarks)
@@ -513,11 +496,11 @@ def bandAnalyze():
         for peakIndex in peakIndices:  # For each peak index in smoothed density profile
             peakX = peakIndex  # Set x to index
             peakY = (tube[peakIndex][0] + (tube[peakIndex][1] - tube[peakIndex][0])/2)  # Set y to midline of tube
-            if peakX > numpy.min(line[0] for line in timeMarkLines):  # If band is further right than the first time mark for its tube
+            if peakX > numpy.min(list(line[0] for line in timeMarkLines)):  # If band is further right than the first time mark for its tube
                 bandLines.append([peakX, peakY, tubeNumber])  # Add band to list
     drawLines()  # Draw lines
     analState = 7  # Set analysis state to 7
-    consoleText.value = "Click a point on the image to add or remove bands. Remove erroneously identified bands from any non-banding tubes. When satisfied, click the Proceed button."  # Update console text
+    homeTabConsoleTextBox.value = "Click a point on the image to add or remove bands. Remove erroneously identified bands from any non-banding tubes. When satisfied, click the Proceed button."  # Update console text
 
 
 def drawLines():
@@ -530,10 +513,10 @@ def drawLines():
     global tubeBounds
     global appParameters
 
-    imageDraw.clear()  # Clear image canvas
-    imageDraw.image(0, 0, finalImage)  # Add image to canvas
+    homeTabRaceTubeImageObject.clear()  # Clear image canvas
+    homeTabRaceTubeImageObject.image(0, 0, finalImage)  # Add image to canvas
     for line in horizontalLines:  # For each horizontal line
-        imageDraw.line(
+        homeTabRaceTubeImageObject.line(
             0, 
             line[1],
             1160, 
@@ -542,7 +525,7 @@ def drawLines():
             width=2
         )  # Draw the horizontal line
     for line in timeMarkLines:  # For each time mark
-        imageDraw.line(
+        homeTabRaceTubeImageObject.line(
             line[0],
             line[1] - (meanTubeWidth / 2 - 5),
             line[0],
@@ -551,7 +534,7 @@ def drawLines():
             width=2,
         )  # Draw the time mark line
     for line in bandLines:  # For each band
-        imageDraw.line(
+        homeTabRaceTubeImageObject.line(
             line[0],
             line[1] - (meanTubeWidth / 2 - 5),
             line[0],
@@ -617,13 +600,13 @@ def imageClickHandler(mouseClick):
             drawLines()  # Add lines to image
 
 
-def getMarkInfo():
+def getTimeMarkTableData():
     """Save information from time mark table to variable."""
     global markHours
 
     numberOfHours = 0  # Set number of hours in row to 0
-    for datum in markData:  # For each row of time mark table
-        match (markData.index(datum) % 3):  # Based on index of text box in list of time mark data table cells
+    for datum in timeMarkTableDataTextBoxes:  # For each row of time mark table
+        match (timeMarkTableDataTextBoxes.index(datum) % 3):  # Based on index of text box in list of time mark data table cells
             case 0:  # If in first column
                 numberOfHours = 24 * (int(datum.value))  # Set hours to number of days in row * 24
             case 1:  # If in second column
@@ -633,63 +616,62 @@ def getMarkInfo():
                 markHours.append(numberOfHours)  # Add number of hours to markHours
 
 
-def storeTubesPrompt():
+def saveTubesToFilePrompt():
     """Create popup window prompting user to name set of tubes in current image before saving to file."""
     setNamePopup = Window(app, title="Pack name...", width=200, height=120)  # Popup window
     setNamePopup.show(wait=True)  # Show window as popup
     setNameTextBox = TextBox(setNamePopup)  # Text box for name of tube set
     setNameTextBox.focus()  # Focus name text box
-    setNameButton = PushButton(setNamePopup, text="Confirm", command=lambda: [storeTubes(setName=setNameTextBox.value), setNamePopup.destroy()])  # Button to save tubes to file and close popup
+    setNameButton = PushButton(setNamePopup, text="Confirm", command=lambda: [saveTubesToFile(setName=setNameTextBox.value), setNamePopup.destroy()])  # Button to save tubes to file and close popup
 
 
-def calcPeriods(densProfile, markHours, timeMarks, bandMarks, hrsLow, hrsHigh, tubeRange):
+def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeriod, maxPeriod, tubeRange):
     """Calculate periods of a given tube's densitometry profile"""
     slopeCoeff = abs(1 / numpy.cos(numpy.arctan(((tubeRange[-1][1] + tubeRange[-1][0]) / 2- (tubeRange[0][1] + tubeRange[0][0]) / 2) / (1160))))  # Calculate coefficient to correct for slope
     # Calculate 'manual' period
-    timeGaps = []  # List of time gaps in pixels per hour
+    growthRates = []  # List of time gaps in pixels per hour
     for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
-        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
-    meanTimeGap = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
+        growthRates.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
+    meanGrowthPixelsPerHour = numpy.mean(growthRates)  # Mean time gap in pixels per hour
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
     bandGaps = []  # List of band gaps in pixels
     for mark in range(0, len(bandMarks) - 1):  # For each 2 consecutive band marks
         bandGaps.append((bandMarks[mark + 1] - bandMarks[mark]))  # Add length of gap in pixels to list of band marks
-    periodMan = ((numpy.mean(bandGaps) / numpy.mean(timeGaps)) * slopeCoeff)  # Set manual period to mean period between band gaps in hours, corrected for slope of tube in image
+    periodManual = ((numpy.mean(bandGaps) / numpy.mean(growthRates)) * slopeCoeff)  # Set manual period to mean period between band gaps in hours, corrected for slope of tube in image
     # Calculate high and low periods in pixels
-    plow = int(hrsLow * meanTimeGap)  # Lowest period to test (in pixels)
-    phigh = int(hrsHigh * meanTimeGap)  # Highest period to test (in pixels)
+    minPeriodPixels = int(minPeriod * meanGrowthPixelsPerHour)  # Lowest period to test (in pixels)
+    maxPeriodPixels = int(maxPeriod * meanGrowthPixelsPerHour)  # Highest period to test (in pixels)
     # Calculate Sokolove-Bushell periodogram
-    freqSB, pgramSB = periodogram(densProfile, scaling="spectrum")  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
-    freqSB = freqSB.tolist()[1:]  # Convert S-B frequencies to list
-    pgramSB = pgramSB.tolist()[1:]  # Convert S-B periodogram values to list
+    frequenciesSokoloveBushell, periodogramPowerSpectrumSokoloveBushell = periodogram(densityProfile, scaling="spectrum")  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
+    frequenciesSokoloveBushell = frequenciesSokoloveBushell.tolist()[1:]  # Convert S-B frequencies to list
+    periodogramPowerSpectrumSokoloveBushell = periodogramPowerSpectrumSokoloveBushell.tolist()[1:]  # Convert S-B periodogram values to list
     # Calculate Lomb-Scargle Periodogram
-    freqInterval = int(((2 * numpy.pi) / plow - (2 * numpy.pi) / phigh) / 0.0001)  # Number of angular frequencies to test for Lomb-Scargle at an interval of 0.0001
-    freqLS = (numpy.linspace((2 * numpy.pi) / phigh, (2 * numpy.pi) / plow, freqInterval).tolist())  # Create list of angular frequencies to test for Lomb-Scargle periodogram
-    pgramLS = lombscargle(list(range(0, 1160)), densProfile, freqLS)  # Get Lomb-Scargle periodogram
-    pgramLS = pgramLS.tolist()  # Convert L-S periodogram values to list
+    frequencyInterval = int(((2 * numpy.pi) / minPeriodPixels - (2 * numpy.pi) / maxPeriodPixels) / 0.0001)  # Number of angular frequencies to test for Lomb-Scargle at an interval of 0.0001
+    frequenciesLombScargle = (numpy.linspace((2 * numpy.pi) / maxPeriodPixels, (2 * numpy.pi) / minPeriodPixels, frequencyInterval).tolist())  # Create list of angular frequencies to test for Lomb-Scargle periodogram
+    periodogramChiSquaredLombScargle = lombscargle(list(range(0, 1160)), densityProfile, frequenciesLombScargle)  # Get Lomb-Scargle periodogram
+    periodogramChiSquaredLombScargle = periodogramChiSquaredLombScargle.tolist()  # Convert L-S periodogram values to list
     # Convert frequencies to periods
-    perLenLS = ((2 * numpy.pi) / freqLS[pgramLS.index(numpy.max(pgramLS))])  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
-    perLenSB = (1 / freqSB[pgramSB.index(numpy.max(pgramSB))])  # Convert frequency of maximal spectral density from Sokolove-Bushell periodogram to horizontal length in pixels
-    pixPerHr = numpy.mean(timeGaps)
-    hrPerPix = 1 / pixPerHr
-    periodLS = perLenLS * hrPerPix * slopeCoeff
-    periodSB = perLenSB * hrPerPix * slopeCoeff
+    periodLombScarglePixels = ((2 * numpy.pi) / frequenciesLombScargle[periodogramChiSquaredLombScargle.index(numpy.max(periodogramChiSquaredLombScargle))])  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
+    periodSokoloveBushellPixels = (1 / frequenciesSokoloveBushell[periodogramPowerSpectrumSokoloveBushell.index(numpy.max(periodogramPowerSpectrumSokoloveBushell))])  # Convert frequency of maximal spectral density from Sokolove-Bushell periodogram to horizontal length in pixels
+    periodLombScargle = periodLombScarglePixels * meanGrowthHoursPerPixel * slopeCoeff
+    periodSokoloveBushell = periodSokoloveBushellPixels * meanGrowthHoursPerPixel * slopeCoeff
     return (
-        periodMan,
-        periodSB,
-        periodLS,
-        freqSB,
-        pgramSB,
-        freqLS,
-        pgramLS,
-        hrsLow,
-        hrsHigh,
+        periodManual,
+        periodSokoloveBushell,
+        periodLombScargle,
+        frequenciesSokoloveBushell,
+        periodogramPowerSpectrumSokoloveBushell,
+        frequenciesLombScargle,
+        periodogramChiSquaredLombScargle,
+        minPeriod,
+        maxPeriod,
         slopeCoeff,
     )
 
 
-def populateExper(tubesMaster):
+def populateExperimentDataTable(tubesMaster):
     """Populate experiment data table."""
-    global experTable
+    global experimentTabTableTextBox
     tableRows = [
         [
             "Entry",
@@ -702,9 +684,9 @@ def populateExper(tubesMaster):
         ],
         ["", "", "", "", "", "", ""],
     ]  # Populate table rows with headers and a blank row
-    maxLengths = [6, 5, 6, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
+    maxColumnLengths = [6, 5, 6, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
     for tube in tubesMaster:  # For each tube in master tube list
-        tubePeriods = calcPeriods(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])  # Calculate periods and periodograms for current tube
+        tubePeriods = calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])  # Calculate periods and periodograms for current tube
         tableRows.append(
             [
                 str(tubesMaster.index(tube) + 1),
@@ -717,419 +699,441 @@ def populateExper(tubesMaster):
             ]
         )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
         # Update max column lengths to fit data
-        if len(str(tubesMaster.index(tube) + 1)) + 1 > maxLengths[0]:
-            maxLengths[0] = len(str(tubesMaster.index(tube) + 1)) + 1
-        if len(str(tube[0])) + 1 > maxLengths[1]:
-            maxLengths[1] = len(str(tube[0])) + 1
-        if len(str(tube[3] + 1)) + 1 > maxLengths[2]:
-            maxLengths[2] = len(str(tube[3] + 1)) + 1
-        if len(str(round(tubePeriods[0], 3))) + 1 > maxLengths[3]:
-            maxLengths[3] = len(str(round(tubePeriods[0], 3))) + 1
-        if len(str(round(tubePeriods[1], 3))) + 1 > maxLengths[4]:
-            maxLengths[4] = len(str(round(tubePeriods[1], 3))) + 1
-        if len(str(round(tubePeriods[2], 3))) + 1 > maxLengths[5]:
-            maxLengths[5] = len(str(round(tubePeriods[2], 3))) + 1
-        if len(str(tube[6])) + 1 > maxLengths[6]:
-            maxLengths[6] = len(str(tube[6])) + 1
+        if len(str(tubesMaster.index(tube) + 1)) + 1 > maxColumnLengths[0]:
+            maxColumnLengths[0] = len(str(tubesMaster.index(tube) + 1)) + 1
+        if len(str(tube[0])) + 1 > maxColumnLengths[1]:
+            maxColumnLengths[1] = len(str(tube[0])) + 1
+        if len(str(tube[3] + 1)) + 1 > maxColumnLengths[2]:
+            maxColumnLengths[2] = len(str(tube[3] + 1)) + 1
+        if len(str(round(tubePeriods[0], 3))) + 1 > maxColumnLengths[3]:
+            maxColumnLengths[3] = len(str(round(tubePeriods[0], 3))) + 1
+        if len(str(round(tubePeriods[1], 3))) + 1 > maxColumnLengths[4]:
+            maxColumnLengths[4] = len(str(round(tubePeriods[1], 3))) + 1
+        if len(str(round(tubePeriods[2], 3))) + 1 > maxColumnLengths[5]:
+            maxColumnLengths[5] = len(str(round(tubePeriods[2], 3))) + 1
+        if len(str(tube[6])) + 1 > maxColumnLengths[6]:
+            maxColumnLengths[6] = len(str(tube[6])) + 1
     tableText = ""  # Blank string for experiment table text
     for row in tableRows:  # For each row of table rows list
         for col in range(0, len(tableRows[0])):  # For each column
-            tableText = (tableText + row[col] + " " * (maxLengths[col] - len(row[col])))  # Append column and spacing to table text
+            tableText = (tableText + row[col] + " " * (maxColumnLengths[col] - len(row[col])))  # Append column and spacing to table text
         tableText = tableText + "\n"  # Append newline to table text
-    experTable.value = tableText  # Set experiment table text box value to text string
+    experimentTabTableTextBox.value = tableText  # Set experiment table text box value to text string
 
 
-def popStatAnal():
+def populateStatisticalAnalysisLists():
     """Populate statistical analysis option lists."""
     global tubesMaster
-    global setList
-    global tubeList
+    global experimentTabStatisticalAnalysisSetList
+    global experimentTabStatisticalAnalysisTubeList
 
-    sets = []  # Blank list of tube sets
-    tubes = []  # Blank list of tubes in selected sets
-    setsSel = setList.value  # Set list of selected sets
-    if setsSel is None:  # If no sets are selected
-        setsSel = []  # Set setsSel to blank list instead of None
-    tubesSel = tubeList.value  # Set list of selected tubes
-    if tubesSel is None:  # If no tubes are selected
-        tubesSel = []  # Set tubesSel to blank list instead of None
+    setsToDisplay = []  # Blank list of tube sets
+    tubesToDisplay = []  # Blank list of tubes in selected sets
+    setsSelected = experimentTabStatisticalAnalysisSetList.value  # Set list of selected sets
+    if setsSelected is None:  # If no sets are selected
+        setsSelected = []  # Set setsSelected to blank list instead of None
+    tubesSelected = experimentTabStatisticalAnalysisTubeList.value  # Set list of selected tubes
+    if tubesSelected is None:  # If no tubes are selected
+        tubesSelected = []  # Set tubesSelected to blank list instead of None
     for tube in tubesMaster:  # For each tube in master tubes list
-        if tube[0] not in sets:  # If tube set name is not in list of set options
-            sets.append(tube[0])  # Add tube set name to list of set options
-        if tube[0] in setsSel:  # If tube set name is in list of selected sets
-            tubes.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
-    setList.destroy()
-    tubeList.destroy()
-    setList = ListBox(
-        setListBox,
+        if tube[0] not in setsToDisplay:  # If tube set name is not in list of set options
+            setsToDisplay.append(tube[0])  # Add tube set name to list of set options
+        if tube[0] in setsSelected:  # If tube set name is in list of selected sets
+            tubesToDisplay.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
+    experimentTabStatisticalAnalysisSetList.destroy()
+    experimentTabStatisticalAnalysisTubeList.destroy()
+    experimentTabStatisticalAnalysisSetList = ListBox(
+        experimentTabStatisticalAnalysisSetListFrame,
         multiselect=True,
         scrollbar=True,
         align="top",
         width=150,
         height="fill",
-        command=popStatAnal,
-        items=sets,
-        selected=setsSel,
+        command=populateStatisticalAnalysisLists,
+        items=setsToDisplay,
+        selected=setsSelected,
     )  # Reinitialize set options list with sets from file
-    tubeList = ListBox(
-        tubeListBox,
+    experimentTabStatisticalAnalysisTubeList = ListBox(
+        experimentTabStatisticalAnalysisTubeListFrame,
         multiselect=True,
         scrollbar=True,
         align="top",
         width=150,
         height="fill",
-        command=popStatAnal,
-        items=tubes,
-        selected=tubesSel,
+        command=populateStatisticalAnalysisLists,
+        items=tubesToDisplay,
+        selected=tubesSelected,
     )  # Reinitialize tube options list with tubes from selected sets
 
 
-def statAnal():
+def performStatisticalAnalysis():
     """Perform statistical analaysis of periods of selected tubes and display results."""
     global tubesMaster
-    global tubeList
-    global methodList
-    global analText
+    global experimentTabStatisticalAnalysisTubeList
+    global experimentTabStatisticalAnalysisMethodList
+    global experimentTabStatisticalAnalysisOutputTextBox
 
-    tubesSel = tubeList.value  # Set list of selected tubes from options list
+    tubesSelected = experimentTabStatisticalAnalysisTubeList.value  # Set list of selected tubes from options list
     method = None  # Initialize method
-    match methodList.value:  # Based on selected method from options list
+    match experimentTabStatisticalAnalysisMethodList.value:  # Based on selected method from options list
         case "Manual":  # If method is Manual
             method = 0  # Set method to 0
         case "Sokolove-Bushell":  # If method is Sokolove-Bushell
             method = 1  # Set method to 1
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = 2  # Set method to 2
-    periods = []  # Blank list of periods for analysis
+    selectedPeriods = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
-        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSel:  # If tube and set name match a selected tube option
-            periods.append(calcPeriods(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[method])  # Add selected period to list of periods for analysis
-    meanPeriod = numpy.mean(periods)  # Calculate mean of selected periods
-    stdDev = numpy.std(periods)  # Calculate standard deviation of selected periods
-    stdErr = stdDev / numpy.sqrt(len(periods))  # Calculate standard error of selected periods
-    analText.value = (
+        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
+            selectedPeriods.append(calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[method])  # Add selected period to list of periods for analysis
+    meanPeriod = numpy.mean(selectedPeriods)  # Calculate mean of selected periods
+    standardDeviation = numpy.std(selectedPeriods)  # Calculate standard deviation of selected periods
+    standardErrorOfMeans = standardDeviation / numpy.sqrt(len(selectedPeriods))  # Calculate standard error of selected periods
+    experimentTabStatisticalAnalysisOutputTextBox.value = (
         "Mean Period ("
-        + methodList.value
+        + experimentTabStatisticalAnalysisMethodList.value
         + "):\n"
         + str(meanPeriod)
         + " hrs\n\nStandard Deviation:\n"
-        + str(stdDev)
-        + "\n\nStandard Error:\n"
-        + str(stdErr)
+        + str(standardDeviation)
+        + "\n\nStandard Error of Means:\n"
+        + str(standardErrorOfMeans)
         + "\n\nn:\n"
-        + str(len(periods))
+        + str(len(selectedPeriods))
     )  # Populate output box with analysis results
 
 
-def popPlots():
+def populatePlots():
     """Populate densitogram and periodogram plots based on selected tube."""
     global tubesMaster
-    global plotFrame
-    global plotCanvas
-    global setList2
-    global tubeList2
-    global methodList2
+    global experimentTabPlotFrame
+    global experimentTabPlotCanvas
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabPlotTubeSelectionMethodList
     global canvas
-    global plotAxes
+    global plotsInfo
     global appParameters
 
     method = None  # Initialize method variable
-    match methodList2.value:  # Based on plot method selected
+    match experimentTabPlotTubeSelectionMethodList.value:  # Based on plot method selected
         case "Sokolove-Bushell":  # If method is Sokolove-Bushell
             method = 4  # Set method to 4
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = 6  # Set method to 6
-    tubesSel = tubeList2.value
-    plotTube = []
+    tubesSelected = experimentTabPlotTubeSelectionTubeList.value
+    tubeToPlot = []
     timeMarks = []
     markHours = []
     for tube in tubesMaster:
-        if (tube[0] + " | " + str(tube[3] + 1)) == tubesSel:
-            plotTube = tube
-            timeMarks = plotTube[8]
-            markHours = plotTube[4]
-    densX = list(range(0, 1160))
+        if (tube[0] + " | " + str(tube[3] + 1)) == tubesSelected:
+            tubeToPlot = tube
+    timeMarks = tubeToPlot[8]
+    markHours = tubeToPlot[4]
+    densitometryXValsRaw = list(range(0, 1160))
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
-        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
-    pixPerHr = numpy.mean(timeGaps)
-    hrPerPix = 1 / pixPerHr
-    densXHrs = []
-    for x in densX:
-        densXHrs.append(round((x - timeMarks[0]) * hrPerPix, 2))
-    timeMarkHrs = []
-    for x in plotTube[8]:
-        timeMarkHrs.append(round((x - timeMarks[0]) * hrPerPix, 2))
-    bandMarkHrs = []
-    for x in plotTube[9]:
-        bandMarkHrs.append(round((x - timeMarks[0]) * hrPerPix, 2))
-    densY = plotTube[5]
+        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))#gaps in px/hr
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
+    densitometryXValsHours = []
+    for xPixel in densitometryXValsRaw:
+        densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+    timeMarksHours = []
+    for xPixel in tubeToPlot[8]:
+        timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+    bandMarksHours = []
+    for xPixel in tubeToPlot[9]:
+        bandMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+    densitometryYVals = tubeToPlot[5]
     #Create period plot data
-    periodData = calcPeriods(plotTube[5], markHours, timeMarks, plotTube[9], 14, 32, plotTube[7])
-    perX = []
-    perY = []
-    calcXVals = periodData[method-1]
-    calcYVals = periodData[method]
+    periodData = calculatePeriodData(tubeToPlot[5], markHours, timeMarks, tubeToPlot[9], 14, 32, tubeToPlot[7])
+    periodogramXVals = []
+    periodogramYVals = []
+    calculatedPeriodogramFrequencies = periodData[method-1]
+    calculatedPeriodogramYVals = periodData[method]
     slopeCoeff = periodData[9]
-    for index in range(0, len(calcXVals)):
+    for frequency in range(0, len(calculatedPeriodogramFrequencies)):
         if method == 4:  # SB
-            period = 1 / calcXVals[index]
+            period = 1 / calculatedPeriodogramFrequencies[frequency]
         else:  # LS
-            period = (2 * numpy.pi) / calcXVals[index]
-        xVal = period * hrPerPix * slopeCoeff
+            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[frequency]
+        xVal = period * meanGrowthHoursPerPixel * slopeCoeff
         if xVal >= 14 and xVal <= 32:#Within 14-32 x range
-            perX.append(xVal)
-            perY.append(calcYVals[index])
+            periodogramXVals.append(xVal)
+            periodogramYVals.append(calculatedPeriodogramYVals[frequency])
     #Plotting stuff
-    gs = gridspec.GridSpec(2,1)
-    px = 1/plt.rcParams['figure.dpi']
-    fig = plt.figure(figsize=(int(screen_width*0.5)*px, int(screen_width*0.2)*px))
-    ax = [None, None]
-    ax[0] = fig.add_subplot(gs[0])
-    ax[1] = fig.add_subplot(gs[1])
-    locatorDensX = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
-    locatorDensY = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
-    locatorDensMinorX = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
-    locatorPerX = matplotlib.ticker.FixedLocator(list(range(periodData[7], periodData[8] + 1)))
-    plotAxes = [densXHrs, densY, timeMarkHrs, bandMarkHrs, perX, perY, locatorPerX]
-    ax[0].plot(densXHrs, densY, label="Density profile", color=appParameters["colorGraph"])
-    ax[0].xaxis.set_major_locator(locatorDensX)
-    ax[0].yaxis.set_major_locator(locatorDensY)
-    ax[0].xaxis.set_minor_locator(locatorDensMinorX)
-    ax[0].set(
+    gridSpecLayout = gridspec.GridSpec(2,1)
+    numPixelsForFigureDownload = 1/plt.rcParams['figure.dpi']
+    tubeDoubleFigure = plt.figure(figsize=(int(screenWidth*0.5)*numPixelsForFigureDownload, int(screenWidth*0.2)*numPixelsForFigureDownload))
+    tubeDoubleFigurePlots = [None, None]
+    tubeDoubleFigurePlots[0] = tubeDoubleFigure.add_subplot(gridSpecLayout[0])
+    tubeDoubleFigurePlots[1] = tubeDoubleFigure.add_subplot(gridSpecLayout[1])
+    densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
+    densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
+    densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
+    periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData[7], periodData[8] + 1)))
+    plotsInfo = [densitometryXValsHours, densitometryYVals, timeMarksHours, bandMarksHours, periodogramXVals, periodogramYVals, periodogramXAxisLabels]
+    tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
+    tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)
+    tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)
+    tubeDoubleFigurePlots[0].xaxis.set_minor_locator(densitometryXAxisMinorLabels)
+    tubeDoubleFigurePlots[0].set(
         xlabel="Time (hrs)", 
         ylabel="Density", 
         title="Densitogram"
     )
-    ax[0].vlines(
-        timeMarkHrs,
-        numpy.min(densY),
-        numpy.max(densY),
+    tubeDoubleFigurePlots[0].vlines(
+        timeMarksHours,
+        numpy.min(densitometryYVals),
+        numpy.max(densitometryYVals),
         colors=appParameters["colorVert"],
         label="Time Marks",
     )
-    ax[0].vlines(
-        bandMarkHrs, 
-        numpy.min(densY), 
-        numpy.max(densY), 
+    tubeDoubleFigurePlots[0].vlines(
+        bandMarksHours, 
+        numpy.min(densitometryYVals), 
+        numpy.max(densitometryYVals), 
         colors=appParameters["colorBand"], 
         label="Bands"
     )
-    ax[0].grid()
-    ax[0].legend(ncol=3, loc="best", fontsize="x-small")
-    ax[1].plot(perX, perY, label="Power spectral density (V\u00b2)", color=appParameters["colorGraph"])
-    ax[1].xaxis.set_major_locator(locatorPerX)
-    ax[1].set(
+    tubeDoubleFigurePlots[0].grid()
+    tubeDoubleFigurePlots[0].legend(ncol=3, loc="best", fontsize="x-small")
+    if method == 4:
+        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])
+    else:
+        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])
+    tubeDoubleFigurePlots[1].xaxis.set_major_locator(periodogramXAxisLabels)
+    tubeDoubleFigurePlots[1].set(
         xlabel="Period (hrs)",
-        ylabel="Power spectral\ndensity (V\u00b2)",
         title="Periodogram",
     )
-    ax[1].grid()
-    ax[1].legend(fontsize="x-small")
-    fig.tight_layout()
+    if method == 4:
+        tubeDoubleFigurePlots[1].set(ylabel="Chi Squared")
+    else:
+        tubeDoubleFigurePlots[1].set(ylabel="Spectral Density")
+    tubeDoubleFigurePlots[1].grid()
+    tubeDoubleFigurePlots[1].legend(fontsize="x-small")
+    tubeDoubleFigure.tight_layout()
     if canvas is not None:
         canvas.get_tk_widget().pack_forget()
-    canvas = FigureCanvasTkAgg(fig, master=plotCanvas)
+    canvas = FigureCanvasTkAgg(tubeDoubleFigure, master=experimentTabPlotCanvas)
     canvas.draw()
     canvas.get_tk_widget().pack()
 
 
-def popPlotTubes():
+def populatePlotTubeSelectionLists():
     """Populate plotting option lists"""
     global tubesMaster
-    global setList2
-    global tubeList2
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
 
-    sets = []  # Blank list of tube sets
-    tubes = []  # Blank list of tubes
-    setsSel = setList2.value  # Set selected set
-    if setsSel is None:  # If no set selected
-        setsSel = ""  # Set selected set to blank string instead of None
-    tubesSel = tubeList2.value  # Set selected tube
-    if tubesSel is None:  # If no tube selected
-        tubesSel = ""  # Set selected set to blank string instead of None
+    setsToDisplay = []  # Blank list of tube sets
+    tubesToDisplay = []  # Blank list of tubes
+    setsSelected = experimentTabPlotTubeSelectionSetList.value  # Set selected set
+    if setsSelected is None:  # If no set selected
+        setsSelected = ""  # Set selected set to blank string instead of None
+    tubesSelected = experimentTabPlotTubeSelectionTubeList.value  # Set selected tube
+    if tubesSelected is None:  # If no tube selected
+        tubesSelected = ""  # Set selected set to blank string instead of None
     for tube in tubesMaster:  # For each tube in master tubes list
-        if tube[0] not in sets:  # If set name of tube is not in list of set options
-            sets.append(tube[0])  # Add tube set name to list of set options
-        if tube[0] in setsSel:  # If tube set name is in list of selected sets
-            tubes.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
-    tubeList2.destroy()
-    setList2.destroy()
-    setList2 = ListBox(
-        setListBox2,
+        if tube[0] not in setsToDisplay:  # If set name of tube is not in list of set options
+            setsToDisplay.append(tube[0])  # Add tube set name to list of set options
+        if tube[0] in setsSelected:  # If tube set name is in list of selected sets
+            tubesToDisplay.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
+    experimentTabPlotTubeSelectionTubeList.destroy()
+    experimentTabPlotTubeSelectionSetList.destroy()
+    experimentTabPlotTubeSelectionSetList = ListBox(
+        experimentTabPlotTubeSelectionSetListFrame,
         scrollbar=True,
         width=150,
         height="fill",
         align="top",
-        command=popPlotTubes,
-        items=sets,
-        selected=setsSel,
+        command=populatePlotTubeSelectionLists,
+        items=setsToDisplay,
+        selected=setsSelected,
     )  # Reinitialize set options list with sets from file
-    tubeList2 = ListBox(
-        tubeListBox2,
+    experimentTabPlotTubeSelectionTubeList = ListBox(
+        experimentTabPlotTubeSelectionTubeListFrame,
         scrollbar=True,
         width=150,
         height="fill",
         align="top",
-        command=popPlotTubes,
-        items=tubes,
-        selected=tubesSel,
+        command=populatePlotTubeSelectionLists,
+        items=tubesToDisplay,
+        selected=tubesSelected,
     )  # Reinitialize tube options list with tubes from file
 
 
-def saveData():#all periods etc
+def saveStatisticalAnalysisData():#all periods etc
     global workingDir
-    global setList
-    global tubeList
-    global methodList
+    global experimentTabStatisticalAnalysisSetList
+    global experimentTabStatisticalAnalysisTubeList
+    global experimentTabStatisticalAnalysisMethodList
     global tubesMaster
     
-    setNames = setList.value
-    tubesSel = tubeList.value
-    periods = []  # Blank list of periods for analysis
+    setNamesSelected = experimentTabStatisticalAnalysisSetList.value
+    tubesSelected = experimentTabStatisticalAnalysisTubeList.value
+    fileRows = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
-        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSel:  # If tube and set name match a selected tube option
-            entry = [tube[0], str(tube[3]+1)] + list(calcPeriods(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[0:2])
-            periods.append(entry)  # Add selected period to list of periods for analysis
-    dataFile = app.select_file(
+        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
+            fileRow = [tube[0], str(tube[3]+1)] + list(calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[0:3])
+            fileRows.append(fileRow)  # Add selected period to list of periods for analysis
+    periodsManual = []
+    periodsSokoloveBushell= []
+    periodsLombScargle = []
+    for row in fileRows:
+        periodsManual.append(row[2])
+        periodsSokoloveBushell.append(row[3])
+        periodsLombScargle.append(row[4])
+    fileRows.append(["Mean", "n = "+str(len(periodsManual)), numpy.mean(periodsManual), numpy.mean(periodsSokoloveBushell), numpy.mean(periodsLombScargle)])
+    fileRows.append(["Standard Deviation", "", numpy.std(periodsManual), numpy.std(periodsSokoloveBushell), numpy.std(periodsLombScargle)])
+    fileRows.append(["Standard Error of Means", "", numpy.std(periodsManual)/numpy.sqrt(len(periodsManual)), numpy.std(periodsSokoloveBushell)/numpy.sqrt(len(periodsSokoloveBushell)), numpy.std(periodsLombScargle)/numpy.sqrt(len(periodsLombScargle))])
+    dataFileName = app.select_file(
         title="Save period data as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
-        filename=("_".join(setNames) + "_period_data"),
+        filename=("_".join(setNamesSelected) + "_period_data"),
     )
-    with open(dataFile, 'w', newline='') as csvfile:
-        rowWriter = csv.writer(csvfile, delimiter=',')
+    with open(dataFileName, 'w', newline='') as dataFile:
+        rowWriter = csv.writer(dataFile, delimiter=',')
         rowWriter.writerow(["Pack Name", "Tube #", "Period (hrs) (Manually Calculated)", "Period (hrs) (Sokolove-Bushell)", "Period (hrs) (Lomb-Scargle)"])
-        for entry in periods:
-            rowWriter.writerow(entry)
+        for fileRow in fileRows:
+            rowWriter.writerow(fileRow)
 
 
-def saveDensPlot():
-    global plotAxes
+def saveDensitometryPlot():
+    global plotsInfo
     global workingDir
-    global setList2
-    global tubeList2
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
     global appParameters
     
-    if plotAxes is not []:
-        tubeNum = tubeList2.value[tubeList2.value.rindex("|")+2:]
-        plotFile = app.select_file(
+    if plotsInfo is not []:
+        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]
+        plotFileName = app.select_file(
             title="Save plot as...",
             folder=workingDir,
             filetypes=[["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"], ["SVG", "*.svg"]],
             save=True,
-            filename=(setList2.value + "_tube" + tubeNum + "_densitometry"),
+            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber + "_densitometry"),
         )
-        densXHrs = plotAxes[0]
-        densY = plotAxes[1]
-        timeMarkHrs = plotAxes[2]
-        bandMarkHrs = plotAxes[3]
-        locatorDensX = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
-        locatorDensY = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
-        locatorDensMinorX = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
-        fig = plt.figure(figsize=[7.5, 2.1])
-        axes = fig.add_subplot()
-        axes.plot(densXHrs, densY, label="Density profile", color=appParameters["colorGraph"])
-        axes.xaxis.set_major_locator(locatorDensX)
-        axes.yaxis.set_major_locator(locatorDensY)
-        axes.xaxis.set_minor_locator(locatorDensMinorX)
-        axes.set(
+        densitometryXValsHours = plotsInfo[0]
+        densitometryYVals = plotsInfo[1]
+        timeMarksHours = plotsInfo[2]
+        bandMarksHours = plotsInfo[3]
+        densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
+        densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
+        densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
+        densitometrySingleFigure = plt.figure(figsize=[7.5, 2.1])
+        densitometrySingleFigurePlot = densitometrySingleFigure.add_subplot()
+        densitometrySingleFigurePlot.plot(densitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
+        densitometrySingleFigurePlot.xaxis.set_major_locator(densitometryXAxisLabels)
+        densitometrySingleFigurePlot.yaxis.set_major_locator(densitometryYAxisLabels)
+        densitometrySingleFigurePlot.xaxis.set_minor_locator(densitometryXAxisMinorLabels)
+        densitometrySingleFigurePlot.set(
             xlabel="Time (hrs)", 
             ylabel="Density", 
             title="Densitogram"
         )
-        axes.vlines(
-            timeMarkHrs,
-            numpy.min(densY),
-            numpy.max(densY),
+        densitometrySingleFigurePlot.vlines(
+            timeMarksHours,
+            numpy.min(densitometryYVals),
+            numpy.max(densitometryYVals),
             colors=appParameters["colorVert"],
             label="Time Marks",
         )
-        axes.vlines(
-            bandMarkHrs, 
-            numpy.min(densY), 
-            numpy.max(densY), 
+        densitometrySingleFigurePlot.vlines(
+            bandMarksHours, 
+            numpy.min(densitometryYVals), 
+            numpy.max(densitometryYVals), 
             colors=appParameters["colorBand"], 
             label="Bands"
         )
-        axes.grid()
-        axes.legend(ncol=3, loc="best", fontsize="x-small")
-        fig.tight_layout(pad=2)
-        fig.savefig(plotFile)
+        densitometrySingleFigurePlot.grid()
+        densitometrySingleFigurePlot.legend(ncol=3, loc="best", fontsize="x-small")
+        densitometrySingleFigure.tight_layout(pad=2)
+        densitometrySingleFigure.savefig(plotFileName)
 
 
-def savePerPlot():
-    global plotAxes
+def savePeriodogramPlot():
+    global plotsInfo
     global workingDir
-    global setList2
-    global tubeList2
-    global methodList2
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabPlotTubeSelectionMethodList
     global appParameters
 
-    if plotAxes is not []:
-        tubeNum = tubeList2.value[tubeList2.value.rindex("|")+2:]
-        plotFile = app.select_file(
+    if plotsInfo is not []:
+        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]
+        plotFileName = app.select_file(
             title="Save plot as...",
             folder=workingDir,
             filetypes=[["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"], ["SVG", "*.svg"]],
             save=True,
-            filename=(setList2.value + "_tube" + tubeNum + "_" + methodList2.value),
+            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber + "_" + experimentTabPlotTubeSelectionMethodList.value),
         )
-        perX = plotAxes[4]
-        perY = plotAxes[5]
-        locatorPerX = plotAxes[6]
-        fig = plt.figure(figsize=[7.5, 2.1])
-        axes = fig.add_subplot()
-        axes.plot(perX, perY, label="Power spectral density (V\u00b2)", color=appParameters["colorGraph"])
-        axes.xaxis.set_major_locator(locatorPerX)
-        axes.set(
+        periodogramXVals = plotsInfo[4]
+        periodogramYVals = plotsInfo[5]
+        periodogramXAxisLabels = plotsInfo[6]
+        periodogramSingleFigure = plt.figure(figsize=[7.5, 2.1])
+        periodogramSingleFigurePlot = periodogramSingleFigure.add_subplot()
+        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":
+            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])
+        else:
+            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])
+        periodogramSingleFigurePlot.xaxis.set_major_locator(periodogramXAxisLabels)
+        periodogramSingleFigurePlot.set(
             xlabel="Period (hrs)",
-            ylabel="Power spectral\ndensity (V\u00b2)",
             title="Periodogram",
         )
-        axes.grid()
-        axes.legend(fontsize="x-small")
-        fig.tight_layout(pad=2)
-        fig.savefig(plotFile)
+        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":
+            periodogramSingleFigurePlot.set(ylabel="Chi Squared")
+        else:
+            periodogramSingleFigurePlot.set(ylabel="Spectral Density")
+        periodogramSingleFigurePlot.grid()
+        periodogramSingleFigurePlot.legend(fontsize="x-small")
+        periodogramSingleFigure.tight_layout(pad=2)
+        periodogramSingleFigure.savefig(plotFileName)
 
 
-def saveDensData():
+def saveDensitometryData():
     global workingDir
-    global setList2
-    global tubeList2
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
     global tubesMaster
     
-    setName = setList2.value
-    tubeNum = int(tubeList2.value[tubeList2.value.rindex("|")+2:])-1
-    densFile = app.select_file(
+    setName = experimentTabPlotTubeSelectionSetList.value
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1
+    densitometryFileName = app.select_file(
         title="Save densitometry as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
-        filename=(setName + "_tube" + str(tubeNum) + "_densitometry_data"),
+        filename=(setName + "_tube" + str(tubeNumber) + "_densitometry_data"),
     )
-    dens = []
+    densityProfile = []
     timeMarks = []
     bandMarks = []
     markHours = []
     for tube in tubesMaster:
-        if tube[0] == setName and tube[3] == tubeNum:
-            dens = tube[5]
+        if tube[0] == setName and tube[3] == tubeNumber:
+            densityProfile = tube[5]
             timeMarks = tube[8]
             bandMarks = tube[9]
             markHours = tube[4]
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
         timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
-    pixPerHr = numpy.mean(timeGaps)
-    hrPerPix = 1 / pixPerHr
-    with open(densFile, 'w', newline='') as csvfile:
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
+    with open(densitometryFileName, 'w', newline='') as csvfile:
         rowWriter = csv.writer(csvfile, delimiter=',')
         rowWriter.writerow(["Pixel (from left)", "Time (hrs)", "Density Profile", "Time/Band Marks"])
         for index in range(0, 1160):
-            densHr = round((index - timeMarks[0]) * hrPerPix, 4)
-            newLine = [index, densHr, dens[index], "N/A"]
+            densityInHours = round((index - timeMarks[0]) * meanGrowthHoursPerPixel, 4)
+            newLine = [index, densityInHours, densityProfile[index], "N/A"]
             markNote = []
             if index in timeMarks:
                 markNote.append("Time")
@@ -1140,72 +1144,72 @@ def saveDensData():
             rowWriter.writerow(newLine)
 
 
-def savePerData():
+def savePeriodogramData():
     global workingDir
-    global setList2
-    global tubeList2
-    global methodList2
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabPlotTubeSelectionMethodList
     global tubesMaster
-    global plotAxes
+    global plotsInfo
 
-    setName = setList2.value
-    tubeNum = int(tubeList2.value[tubeList2.value.rindex("|")+2:])-1
-    method = methodList2.value
-    perFile = app.select_file(
+    setName = experimentTabPlotTubeSelectionSetList.value
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1
+    method = experimentTabPlotTubeSelectionMethodList.value
+    periodogrammetryFileName = app.select_file(
         title="Save densitometry as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
-        filename=(setName + "_tube" + str(tubeNum) + "_" + method + "_data"),
+        filename=(setName + "_tube" + str(tubeNumber) + "_" + method + "_data"),
     )
     method = None  # Initialize method variable
-    match methodList2.value:  # Based on plot method selected
+    match experimentTabPlotTubeSelectionMethodList.value:  # Based on plot method selected
         case "Sokolove-Bushell":  # If method is Sokolove-Bushell
             method = 4  # Set method to 4
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = 6  # Set method to 6
-    plotTube = []
+    tubeToPlot = []
     timeMarks = []
     markHours = []
     for tube in tubesMaster:
-        if tube[0] == setName and tube[3] == tubeNum:
-            plotTube = tube
-            timeMarks = plotTube[8]
-            markHours = plotTube[4]
+        if tube[0] == setName and tube[3] == tubeNumber:
+            tubeToPlot = tube
+            timeMarks = tubeToPlot[8]
+            markHours = tubeToPlot[4]
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
         timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
-    pixPerHr = numpy.mean(timeGaps)
-    hrPerPix = 1 / pixPerHr
-    periodData = calcPeriods(plotTube[5], markHours, timeMarks, plotTube[9], 14, 32, plotTube[7])
-    perX = []
-    perY = []
-    freqs = []
-    calcXVals = periodData[method-1]
-    calcYVals = periodData[method]
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
+    periodData = calculatePeriodData(tubeToPlot[5], markHours, timeMarks, tubeToPlot[9], 14, 32, tubeToPlot[7])
+    periodogramXVals = []
+    periodogramYVals = []
+    periodogramFrequencies = []
+    calculatedPeriodogramFrequencies = periodData[method-1]
+    calculatedPeriodogramYVals = periodData[method]
     slopeCoeff = periodData[9]
-    for index in range(0, len(calcXVals)):
+    for index in range(0, len(calculatedPeriodogramFrequencies)):
         if method == 4:  # SB
-            period = 1 / calcXVals[index]
+            period = 1 / calculatedPeriodogramFrequencies[index]
         else:# LS
-            period = (2 * numpy.pi) / calcXVals[index]
-        xVal = period * hrPerPix * slopeCoeff
+            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[index]
+        xVal = period * meanGrowthHoursPerPixel * slopeCoeff
         if xVal >= 14 and xVal <= 32:
-            perX.append(xVal)
-            perY.append(calcYVals[index])
-            freqs.append(calcXVals[index])
-    with open(perFile, 'w', newline='') as csvfile:
+            periodogramXVals.append(xVal)
+            periodogramYVals.append(calculatedPeriodogramYVals[index])
+            periodogramFrequencies.append(calculatedPeriodogramFrequencies[index])
+    with open(periodogrammetryFileName, 'w', newline='') as csvfile:
         rowWriter = csv.writer(csvfile, delimiter=',')
         if method == 4:
             rowWriter.writerow(["Frequency", "Period (hrs)", "Spectral Density"])
         elif method == 6:
             rowWriter.writerow(["Angular Frequency", "Period (hrs)", "Spectral Density"])
-        for index in range(0, len(perX)):
-            newLine = [freqs[index], perX[index], perY[index]]
+        for index in range(0, len(periodogramXVals)):
+            newLine = [periodogramFrequencies[index], periodogramXVals[index], periodogramYVals[index]]
             rowWriter.writerow(newLine)
 
 
-def storeTubes(setName):
+def saveTubesToFile(setName):
     """Store tubes from image in master tubes list, and save master tubes list to file."""
     global tubeBounds
     global timeMarkLines
@@ -1218,20 +1222,20 @@ def storeTubes(setName):
     global tubeLength
     global openFile
 
-    setNames = []
+    setNamesInFile = []
     for tube in tubesMaster:
-        setNames.append(tube[0])
-    if setName in setNames:
+        setNamesInFile.append(tube[0])
+    if setName in setNamesInFile:
         setName = setName + "_1"
     topTubeTimeMarks = []  # Blank list of time mark x values
     for line in timeMarkLines:  # For each line in list of time marks
-        if line[2] == tube:  # If line is in current tube
+        if line[2] == 0:  # If line is in current tube
             topTubeTimeMarks.append(line[0])  # Add line x to timeMarks
     topTubeTimeMarks.sort()  # Sort time marks low to high/left to right
-    mmPerPix = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
+    mmPerPixelInImage = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
     for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
         tubeRange = tubeBounds[tube]  # Y bounds of tube
-        densProfile = densityProfiles[tube]  # Density profile of tube
+        densityProfile = densityProfiles[tube]  # Density profile of tube
         timeMarks = []  # Blank list of time mark x values
         for line in timeMarkLines:  # For each line in list of time marks
             if line[2] == tube:  # If line is in current tube
@@ -1250,8 +1254,8 @@ def storeTubes(setName):
         timeGaps = []  # List of time gaps in pixels per hour
         for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
             timeGaps.append((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
-        pixPerHr = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
-        growthRate = round(mmPerPix * pixPerHr, 2)#mm per hour
+        meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
+        growthRate = round(mmPerPixelInImage * meanGrowthPixelsPerHour, 2)#mm per hour
         tubesMaster.append(
             [
                 setName,
@@ -1259,16 +1263,16 @@ def storeTubes(setName):
                 imageString,
                 tube,
                 markHours,
-                densProfile,
+                densityProfile,
                 growthRate,
                 tubeRange,
                 timeMarks,
                 bandMarks,
             ]
         )  # Add tube info to master tubes list
-    saveExp()  # Save tubes to file
-    cancelRT()  # Reset image analysis
-    populateExper(tubesMaster)  # Populate experiment data table
+    saveExperimentFile()  # Save tubes to file
+    cancelImageAnalysis()  # Reset image analysis
+    populateExperimentDataTable(tubesMaster)  # Populate experiment data table
 
 
 def proceedHandler():
@@ -1278,17 +1282,18 @@ def proceedHandler():
     global markHours
     global timeMarkLines
     global bandLines
+
     match analState:  # Based on analysis state
         case 2:  # Analysis state 2 (tube bounds)
-            rescanButt.disable()
-            identTubes()
+            rescanHorizontalLinesButton.disable()
+            identifyRaceTubeBounds()
         case 5:  # Analysis state 5 (time marks)
-            bandAnalyze()
+            identifyBanding()
         case 7:  # Analysis state 7 (band locations)
             analState = 8  # Set analysis state to 8
             for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
                 tubeRange = tubeBounds[tube]  # Y bounds of tube
-                densProfile = densityProfiles[tube]  # Density profile of tube
+                densityProfile = densityProfiles[tube]  # Density profile of tube
                 timeMarks = []  # Blank list of time mark x values
                 for line in timeMarkLines:  # For each line in list of time marks
                     if line[2] == tube:  # If line is in current tube
@@ -1299,44 +1304,43 @@ def proceedHandler():
                     if line[2] == tube:  # If line is in current tube
                         bandMarks.append(line[0])  # Add line x to bandMarks
                 bandMarks.sort()  # Sort band marks low to high/left to right
-                periods = calcPeriods(
-                    densProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange
-                )  # Calculate period data of tube
+                periods = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange)  # Calculate period data of tube
                 prelimContents[tube + 1][2] = str(round(periods[0], 2))  # Add manually calculated period (rounded) to preliminary data list
-            prelimUpdate()  # Update preliminary data text box
-            proceedButt.disable()  # Disable proceed button
-            saveTubesButt.enable()  # Enable save tubes button
+            updatePreliminaryDataDisplay()  # Update preliminary data text box
+            proceedButton.disable()  # Disable proceed button
+            saveTubesToFileButton.enable()  # Enable save tubes button
 
 
 def keyBindHandler(keys):  # Shift, Command, S, O, P, D, H
     """Handle uses of multikey hotkeys to perform program functions"""
     global keyPresses
+
     match keys:  # Based on list of pressed keys
         case [0, 1, 1, 0, 0, 0, 0]:  # If command, s pressed
-            saveExp()  # Save experiment
+            saveExperimentFile()  # Save experiment
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
         case [1, 1, 1, 0, 0, 0, 0]:  # If shift, command, s pressed
-            saveAs()  # Save as
+            saveExperimentFileAs()  # Save as
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
         case [0, 1, 0, 1, 0, 0, 0]:  # If command, o pressed
-            openExp()  # Open experiment file
+            openExperimentFile()  # Open experiment file
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
         case [0, 1, 0, 0, 0, 1, 0]:  # If command, d pressed
-            setWorkDir()  # Set working directory
+            setWorkingDirectory()  # Set working directory
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
         case [0, 1, 0, 0, 0, 0, 1]:  # If command, h pressed
             helpMain()  # Open main help page
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
         case [0, 1, 0, 0, 1, 0, 0]:  # If command, p pressed
-            graphicsPrefs()  # Open graphics settings
+            graphicsPreferencesPrompt()  # Open graphics settings
             keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
 
 
 def keyPress(keyPressed):
     """Handle each key press registered by app object."""
     global keyPresses
-    match [str(keyPressed.key), str(keyPressed.keycode),
-    ]:  # Based on key and keycode of key pressed
+
+    match [str(keyPressed.key), str(keyPressed.keycode)]:  # Based on key and keycode of key pressed
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 1
         case ["", "922810622"]:  # Command
@@ -1357,8 +1361,7 @@ def keyPress(keyPressed):
 def keyRelease(keyReleased):
     """Handle each key release registered by app object."""
     global keyPresses
-    match [str(keyReleased.key), str(keyReleased.keycode),
-    ]:  # Based on key and keycode of key released
+    match [str(keyReleased.key), str(keyReleased.keycode)]:  # Based on key and keycode of key released
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 0
         case ["", "922810622"]:  # Command
@@ -1377,46 +1380,51 @@ def keyRelease(keyReleased):
 
 def helpMain():
     """Direct user to main help page/documentation for app."""
+    
     webbrowser.open(
         "https://github.com/PelhamLab", new=0, autoraise=True
     )  # Open google in browser :p
 
 
 def invertColor(hex):
+    """Invert color given as hex code and return hex code of inverted color."""
+    
     hex = hex.lstrip('#')
     rgb =  tuple(255 - int(hex[i:i + len(hex) // 3], 16) for i in range(0, len(hex), len(hex)//3))
     out = '#%02x%02x%02x' % rgb
     return out
 
 
-def graphicsPrefs():
+def graphicsPreferencesPrompt():
+    """Present popup window for changing graphics preferences."""
     global appParameters
 
-    graphicsWin = Window(app, title="Graphics Preferences", layout="grid", width=375, height=300)
-    graphicsWin.show()
+    graphicsPreferencesWindow = Window(app, title="Graphics Preferences", layout="grid", width=375, height=300)
+    graphicsPreferencesWindow.show()
 
-    colorGraphButt = PushButton(graphicsWin, grid=[0,0], text="Graph Color", height=0, width=20, command=colorPickHandler, args=[0])
-    colorGraphText = TextBox(graphicsWin, grid=[2,0], text=appParameters["colorGraph"], width=7)
-    colorHorizButt = PushButton(graphicsWin, grid=[0,1], text="Horizontal Line Color", height=0, width=20, command=colorPickHandler, args=[1])
-    colorHorizText = TextBox(graphicsWin, grid=[2,1], text=appParameters["colorHoriz"], width=7)
-    colorVertButt = PushButton(graphicsWin, grid=[0,2], text="Time Mark Color", height=0, width=20, command=colorPickHandler, args=[2])
-    colorVertText = TextBox(graphicsWin, grid=[2,2], text=appParameters["colorVert"], width=7)
-    colorBandButt = PushButton(graphicsWin, grid=[0,3], text="Band Mark Color", height=0, width=20, command=colorPickHandler, args=[3])
-    colorBandText = TextBox(graphicsWin, grid=[2,3], text=appParameters["colorBand"], width=7)
+    changeGraphColorButton = PushButton(graphicsPreferencesWindow, grid=[0,0], text="Graph Color", height=0, width=20, command=colorPickHandler, args=[0])
+    changeGraphColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,0], text=appParameters["colorGraph"], width=7)
+    changeHorizontalLineColorButton = PushButton(graphicsPreferencesWindow, grid=[0,1], text="Horizontal Line Color", height=0, width=20, command=colorPickHandler, args=[1])
+    changeHorizontalLineColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,1], text=appParameters["colorHoriz"], width=7)
+    changeVerticalLineColorButton = PushButton(graphicsPreferencesWindow, grid=[0,2], text="Time Mark Color", height=0, width=20, command=colorPickHandler, args=[2])
+    changeVerticalLineColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,2], text=appParameters["colorVert"], width=7)
+    changeBandLineColorButton = PushButton(graphicsPreferencesWindow, grid=[0,3], text="Band Mark Color", height=0, width=20, command=colorPickHandler, args=[3])
+    changeBandLineColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,3], text=appParameters["colorBand"], width=7)
 
-    colorGraphText.text_color = appParameters["colorGraph"]
-    colorGraphText.bg = invertColor(appParameters["colorGraph"])
-    colorHorizText.text_color = appParameters["colorHoriz"]
-    colorHorizText.bg = invertColor(appParameters["colorHoriz"])
-    colorVertText.text_color = appParameters["colorVert"]
-    colorVertText.bg = invertColor(appParameters["colorVert"])
-    colorBandText.text_color = appParameters["colorBand"]
-    colorBandText.bg = invertColor(appParameters["colorBand"])
+    changeGraphColorTextBox.text_color = appParameters["colorGraph"]
+    changeGraphColorTextBox.bg = invertColor(appParameters["colorGraph"])
+    changeHorizontalLineColorTextBox.text_color = appParameters["colorHoriz"]
+    changeHorizontalLineColorTextBox.bg = invertColor(appParameters["colorHoriz"])
+    changeVerticalLineColorTextBox.text_color = appParameters["colorVert"]
+    changeVerticalLineColorTextBox.bg = invertColor(appParameters["colorVert"])
+    changeBandLineColorTextBox.text_color = appParameters["colorBand"]
+    changeBandLineColorTextBox.bg = invertColor(appParameters["colorBand"])
 
-    graphicsWin.repeat(200, graphicsPrefsUpdate, args=[[colorGraphText, colorHorizText, colorVertText, colorBandText]])
+    graphicsPreferencesWindow.repeat(200, graphicsPreferencesPromptUpdate, args=[[changeGraphColorTextBox, changeHorizontalLineColorTextBox, changeVerticalLineColorTextBox, changeBandLineColorTextBox]])
 
 
 def colorPickHandler(button):
+    """Prompt user to pick a new color when a button to change a color preference is clicked."""
     global appParameters
 
     newColor = ""
@@ -1424,23 +1432,24 @@ def colorPickHandler(button):
         case 0:
             newColor = app.select_color(color=appParameters["colorGraph"])
             appParameters["colorGraph"] = newColor
-            updateParams()
+            updateAppParameters()
         case 1:
             newColor = app.select_color(color=appParameters["colorHoriz"])
             appParameters["colorHoriz"] = newColor
-            updateParams()
+            updateAppParameters()
         case 2:
             newColor = app.select_color(color=appParameters["colorVert"])
             appParameters["colorVert"] = newColor
-            updateParams()
+            updateAppParameters()
         case 3:
             newColor = app.select_color(color=appParameters["colorBand"])
             appParameters["colorBand"] = newColor
-            updateParams()
+            updateAppParameters()
     drawLines()
 
 
-def graphicsPrefsUpdate(texts):
+def graphicsPreferencesPromptUpdate(texts):
+    """Update graphics preferences window."""
     global appParameters
     
     texts[0].text_color = appParameters["colorGraph"]
@@ -1451,18 +1460,50 @@ def graphicsPrefsUpdate(texts):
     texts[1].bg = invertColor(appParameters["colorHoriz"])
     texts[2].text_color = appParameters["colorVert"]
     texts[2].value = appParameters["colorVert"]
-    texts[3].bg = invertColor(appParameters["colorVert"])
+    texts[2].bg = invertColor(appParameters["colorVert"])
     texts[3].text_color = appParameters["colorBand"]
     texts[3].value = appParameters["colorBand"]
-    texts[4].bg = invertColor(appParameters["colorBand"])
+    texts[3].bg = invertColor(appParameters["colorBand"])
+
+
+
+def setupTasksOnOpenAndRun():  # Tasks to run on opening app
+    """Tasks to run open opening the application. Reads in local parameters file to get user-defined settings, and preselects home tab."""
+    global appParameters
+    global workingDir
+
+    with open("./parameters.txt", newline="") as parametersFile:  # Open local parameters.txt file
+        reader = csv.reader(parametersFile, delimiter="=")  # Define csv reader
+        for line in reader:  # For each line in parameters.txt
+            appParameters[line[0]] = line[1]  # Populate appropriate element of parameters dictionary
+    if (appParameters["workingDir"] == "" or not (os.path.exists(appParameters["workingDir"]))):  # If a working directory is not already specified in parameters, or points to a nonexistent directory
+        setWorkingDirectory()  # Prompt user to set a working directory
+    else:  # Otherwise
+        workingDir = appParameters["workingDir"]  # Set working directory to directory specified in parameters dictionary
+    experimentTabFrame.hide()  # Hide experiment tab
+    homeTabFrame.show()  # Show home tab
+
+
+def openAndRun():
+    """
+    Colors
+    Bright orange: #F29F05
+    Bright blue: #69C5FF
+    Accent dark: #676975
+    Dull orange: #deb15e
+    Dull blue: #9fcdea
+    Light grey: grey95
+    """
+    setupTasksOnOpenAndRun()
+    app.display()
 
 
 # Create app object
-app = App(layout="auto", title="Chronidia")
+app = App(layout="auto", title="Rhythmidia")
 #app.image = "./icon.png"
 app.when_closed = sys.exit
-app.width = screen_width
-app.height = screen_height
+app.width = screenWidth
+app.height = screenHeight
 appHeight = app.height
 appWidth = app.width
 
@@ -1476,255 +1517,241 @@ menubar = MenuBar(
     toplevel=["File", "Help"],
     options=[
         [
-            ["Open Experiment (⌘O)", openExp],
-            ["Save Experiment (⌘S)", saveExp],
-            ["Save Experiment As... (\u2191⌘S)", saveAs],
-            ["Set Working Directory (⌘D)", setWorkDir],
-            ["Graphics Preferences (⌘P)", graphicsPrefs]
+            ["Open Experiment                (⌘O)", openExperimentFile],
+            ["Save Experiment                (⌘S)", saveExperimentFile],
+            ["Save Experiment As...    (\u2191⌘S)", saveExperimentFileAs],
+            ["Set Working Directory          (⌘D)", setWorkingDirectory],
+            ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
         [["Help 1", helpMain]],
     ],
 )
 
-"""
-Colors
-Bright orange: #F29F05
-Bright blue: #69C5FF
-Accent dark: #676975
-Dull orange: #deb15e
-Dull blue: #9fcdea
-Light grey: grey95
-"""
-
 # Set up navigation tabs
-navBox = Box(
+navigationTabsFrame = Box(
     app, width="fill", align="top", layout="grid", border="0"
 )  # Frame for Home, Experiment tabs
-imageTab = Box(navBox, grid=[0, 0], border="0", height="30")  # Home tab button
-imageText = Text(
-    imageTab, text="Home", width=20, size=14, color="black", font="Arial"
+homeTab = Box(navigationTabsFrame, grid=[0, 0], border="0", height="30")  # Home tab button
+homeTabText = Text(
+    homeTab, text="Home", width=20, size=14, color="black", font="Arial"
 )  # Home tab button text
 experimentTab = Box(
-    navBox, grid=[3, 0], border="0", height="30"
+    navigationTabsFrame, grid=[3, 0], border="0", height="30"
 )  # Experiment tab button
-experimentText = Text(
+experimentTabText = Text(
     experimentTab, text="Experiment", width=20, size=14, color="black", font="Arial"
 )  # Home tab button text
 # Set up tab colors
-navBox.bg = "#676975"  # Dark grey nav bar
-imageTab.bg = "#deb15e"  # Conidia orange home tab
+navigationTabsFrame.bg = "#676975"  # Dark grey nav bar
+homeTab.bg = "#deb15e"  # Conidia orange home tab
 experimentTab.bg = "#9fcdea"  # Baby blue experiment tab
 # Set up tab functions
-imageText.when_clicked = selectHome
-experimentText.when_clicked = selectExper
+homeTabText.when_clicked = selectHomeTab
+experimentTabText.when_clicked = selectExperTab
 
 
 # Set up home tab
-homeFrame = Box(app, width="fill", height="fill", align="top", layout="auto")
-homeFrame.bg = "grey95"
-homeFrame.set_border(5, "#deb15e")
-homeFrame.text_color = "black"
+homeTabFrame = Box(app, width="fill", height="fill", align="top", layout="auto")
+homeTabFrame.bg = "grey95"
+homeTabFrame.set_border(5, "#deb15e")
+homeTabFrame.text_color = "black"
 # Home buttons
-homeButtonBox = Box(
-    homeFrame, width="fill", height="20", align="top", layout="grid", border="0"
+homeTabTopButtonRowFrame = Box(
+    homeTabFrame, width="fill", height="20", align="top", layout="grid", border="0"
 )
-uploadRtButt = PushButton(
-    homeButtonBox, grid=[0, 0], text="Upload Race Tube Image", command=fUploadRT
+uploadRaceTubeImageButton = PushButton(
+    homeTabTopButtonRowFrame, grid=[0, 0], text="Upload Race Tube Image", command=uploadRaceTubeImage
 )
-rotateRtButt = PushButton(
-    homeButtonBox, grid=[2, 0], text="Rotate Image", command=fRotateRT
+rotateRaceTubeImageButton = PushButton(
+    homeTabTopButtonRowFrame, grid=[1, 0], text="Rotate Image", command=rotateRaceTubeImage
 )
-rotateRtButt.disable()
-lengthBox = Box(homeButtonBox, grid=[3, 0], border="0", height="20", layout="grid")
-rtLengthLabel = Text(
-    lengthBox,
+rotateRaceTubeImageButton.disable()
+raceTubeLengthFrame = Box(homeTabTopButtonRowFrame, grid=[2, 0], border="0", height="20", layout="grid")
+raceTubeLengthLabel = Text(
+    raceTubeLengthFrame,
     color="black",
     grid=[0, 0],
     text="Length from first to last\ntime mark of 1st tube (mm)",
 )
-rtLength = TextBox(lengthBox, text="300", grid=[1, 0])
-lockButt = PushButton(
-    homeButtonBox, grid=[4, 0], text="Lock and Analyze", command=fLockRT
+raceTubeLengthTextBox = TextBox(raceTubeLengthFrame, text="300", grid=[1, 0])
+lockAndAnalyzeButton = PushButton(
+    homeTabTopButtonRowFrame, grid=[3, 0], text="Lock and Analyze", command=lockAndAnalyzeRaceTubeImage
 )
-lockButt.disable()
-# Home data
-dataBox = Box(homeFrame, align="top", border="0", width="fill")
-markBox = Box(dataBox, width=180, height=400, align="left")
-markRowBoxes = [Box(markBox, align="top", layout="grid", width="fill")]
-markRowBoxes[0].bg = "grey75"
-markLabels = []
-markData = []
-markHeader1 = Text(markRowBoxes[0], grid=[0, 0], text="Mark ", font="Courier", size=14)
-markHeader2 = Text(markRowBoxes[0], grid=[1, 0], text="Day ", font="Courier", size=14)
-markHeader3 = Text(markRowBoxes[0], grid=[2, 0], text="Hour ", font="Courier", size=14)
-markHeader4 = Text(markRowBoxes[0], grid=[3, 0], text="Min", font="Courier", size=14)
-for line in range(1, 11):
-    markRowBoxes.append(Box(markBox, align="top", layout="grid", width="fill"))
-    if markRowBoxes[line - 1].bg == "grey75":
-        markRowBoxes[line].bg = "grey85"
+lockAndAnalyzeButton.disable()
+
+homeTabMiddleContentFrame = Box(homeTabFrame, align="top", border="0", width="fill")
+timeMarkTableFrame = Box(homeTabMiddleContentFrame, width=180, height=400, align="left")
+timeMarkTableRows = [Box(timeMarkTableFrame, align="top", layout="grid", width="fill")]
+timeMarkTableRows[0].bg = "grey75"
+timeMarkTableLabels = []
+timeMarkTableDataTextBoxes = []
+timeMarkTableHeader1 = Text(timeMarkTableRows[0], grid=[0, 0], text="Mark ", font="Courier", size=14)
+timeMarkTableHeader2 = Text(timeMarkTableRows[0], grid=[1, 0], text="Day ", font="Courier", size=14)
+timeMarkTableHeader3 = Text(timeMarkTableRows[0], grid=[2, 0], text="Hour ", font="Courier", size=14)
+timeMarkTableHeader4 = Text(timeMarkTableRows[0], grid=[3, 0], text="Min", font="Courier", size=14)
+for row in range(1, 11):
+    timeMarkTableRows.append(Box(timeMarkTableFrame, align="top", layout="grid", width="fill"))
+    if timeMarkTableRows[row - 1].bg == "grey75":
+        timeMarkTableRows[row].bg = "grey85"
     else:
-        markRowBoxes[line].bg = "grey75"
-    markLabels.append(
+        timeMarkTableRows[row].bg = "grey75"
+    timeMarkTableLabels.append(
         Text(
-            markRowBoxes[line],
+            timeMarkTableRows[row],
             grid=[0, 0],
-            text=str(line) + " " * (5 - len(str(line))),
+            text=str(row) + " " * (5 - len(str(row))),
             font="Courier",
             size=14,
         )
     )
-    markData.append(
-        TextBox(markRowBoxes[line], grid=[1, 0], text=str(line - 1), width=3)
+    timeMarkTableDataTextBoxes.append(
+        TextBox(timeMarkTableRows[row], grid=[1, 0], text=str(row - 1), width=3)
     )
-    markData.append(TextBox(markRowBoxes[line], grid=[2, 0], text="0", width=3))
-    markData.append(TextBox(markRowBoxes[line], grid=[3, 0], text="0", width=3))
-imageBox = Box(dataBox, width=1160, height=400, align="left")
-imageDraw = Drawing(imageBox, width="fill", height="fill")
-consoleBox = Box(homeFrame, width="fill", height="50")
-rescanButt = PushButton(consoleBox, text="Rescan", command=horizAnalyze, align="left")
-rescanButt.disable()
-proceedButt = PushButton(consoleBox, text="Proceed", command=proceedHandler, align="left")
-proceedButt.disable()
-consoleText = TextBox(consoleBox, width=80, height=4, multiline=True, align="left")
-consoleText.disable()
-saveTubesButt = PushButton(
-    consoleBox,
-    text="Save Tubes to File",
-    command=storeTubesPrompt,
-    align="left",
-)
-saveTubesButt.disable()
-resetButt = PushButton(
-    consoleBox,
-    text="Cancel image analysis",
-    command=cancelRT,
-    align="left",
-)
-resetButt.disable()
-prelimBox = Box(homeFrame, width="fill", height=400, align="top")
-prelimText = Text(prelimBox, font="Courier", size=14, align="top")
+    timeMarkTableDataTextBoxes.append(TextBox(timeMarkTableRows[row], grid=[2, 0], text="0", width=3))
+    timeMarkTableDataTextBoxes.append(TextBox(timeMarkTableRows[row], grid=[3, 0], text="0", width=3))
+homeTabRaceTubeImageFrame = Box(homeTabMiddleContentFrame, width=1160, height=400, align="left")
+homeTabRaceTubeImageObject = Drawing(homeTabRaceTubeImageFrame, width="fill", height="fill")
+homeTabBottomButtonRowFrame = Box(homeTabFrame, width="fill", height="50")
+rescanHorizontalLinesButton = PushButton(homeTabBottomButtonRowFrame, text="Rescan", command=identifyHorizontalLines, align="left")
+rescanHorizontalLinesButton.disable()
+proceedButton = PushButton(homeTabBottomButtonRowFrame, text="Proceed", command=proceedHandler, align="left")
+proceedButton.disable()
+homeTabConsoleTextBox = TextBox(homeTabBottomButtonRowFrame, width=80, height=4, multiline=True, align="left")
+homeTabConsoleTextBox.disable()
+saveTubesToFileButton = PushButton(homeTabBottomButtonRowFrame, text="Save Tubes to File", command=saveTubesToFilePrompt, align="left")
+saveTubesToFileButton.disable()
+restRaceTubeImageAnalysisButton = PushButton(homeTabBottomButtonRowFrame, text="Cancel image analysis", command=cancelImageAnalysis, align="left")
+restRaceTubeImageAnalysisButton.disable()
+homeTabPreliminaryDataAnalysisFrame = Box(homeTabFrame, width="fill", height=400, align="top")
+homeTabPreliminaryDataAnalysisTextBox = Text(homeTabPreliminaryDataAnalysisFrame, font="Courier", size=14, align="top")
 # Set up home tab colors
-lengthBox.bg = "gray95"
-rtLength.text_color = "black"
-imageBox.bg = "#676975"
-consoleText.text_color = "black"
+raceTubeLengthFrame.bg = "gray95"
+raceTubeLengthTextBox.text_color = "black"
+homeTabRaceTubeImageFrame.bg = "#676975"
+homeTabConsoleTextBox.text_color = "black"
 # Set up home functions
-imageDraw.when_clicked = imageClickHandler
+homeTabRaceTubeImageObject.when_clicked = imageClickHandler
 
 
 # Set up experiments tab
-experFrame = Box(app, width="fill", height="fill", align="top")
-experFrame.bg = "grey95"
-experFrame.text_color = "black"
-experFrame.set_border(5, "#9fcdea")
-experBoxTop = Box(experFrame, width="fill", height=appHeight*0.22, align="top")
-experTableFrame = Box(experBoxTop, width=screen_width*0.45, height=appHeight*0.22, align="left")
-experTable = TextBox(experTableFrame, multiline=True, width="fill", height="fill")
-experTable.wrap = False
-experTable.font = "Courier"
-experTableFrame.set_border(2, "#9fcdea")
-experTable.text_color = "black"
-statTable = Box(experBoxTop, width="fill", height="fill", align="left")
-statTable.set_border(2, "#9fcdea")
-setListBox = Box(statTable, width=150, height="fill", align="left")
-setListTitle = Text(setListBox, text="\nSets:", align="top")
-setList = ListBox(
-    setListBox,
+experimentTabFrame = Box(app, width="fill", height="fill", align="top")
+experimentTabFrame.bg = "grey95"
+experimentTabFrame.text_color = "black"
+experimentTabFrame.set_border(5, "#9fcdea")
+experimentTabTopContentRow = Box(experimentTabFrame, width="fill", height=appHeight*0.22, align="top")
+experimentTabTableFrame = Box(experimentTabTopContentRow, width=screenWidth*0.45, height=appHeight*0.22, align="left")
+experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill")
+experimentTabTableTextBox.wrap = False
+experimentTabTableTextBox.font = "Courier"
+experimentTabTableFrame.set_border(2, "#9fcdea")
+experimentTabTableTextBox.text_color = "black"
+experimentTabStatisticalAnalysisFrame = Box(experimentTabTopContentRow, width="fill", height="fill", align="left")
+experimentTabStatisticalAnalysisFrame.set_border(2, "#9fcdea")
+experimentTabStatisticalAnalysisSetListFrame = Box(experimentTabStatisticalAnalysisFrame, width=150, height="fill", align="left")
+experimentTabStatisticalAnalysisSetListTitle = Text(experimentTabStatisticalAnalysisSetListFrame, text="\n\nSets:", align="top")
+experimentTabStatisticalAnalysisSetList = ListBox(
+    experimentTabStatisticalAnalysisSetListFrame,
     multiselect=True,
     scrollbar=True,
     align="top",
     width=150,
     height="fill",
-    command=popStatAnal,
+    command=populateStatisticalAnalysisLists,
 )
-tubeListBox = Box(statTable, width=150, height="fill", align="left")
-tubeListTitle = Text(tubeListBox, text="\nTubes:", align="top")
-tubeList = ListBox(
-    tubeListBox,
+experimentTabStatisticalAnalysisTubeListFrame = Box(experimentTabStatisticalAnalysisFrame, width=150, height="fill", align="left")
+experimentTabStatisticalAnalysisTubeListTitle = Text(experimentTabStatisticalAnalysisTubeListFrame, text="\n\nTubes:", align="top")
+experimentTabStatisticalAnalysisTubeList = ListBox(
+    experimentTabStatisticalAnalysisTubeListFrame,
     multiselect=True,
     scrollbar=True,
     align="top",
     width=150,
     height="fill",
-    command=popStatAnal,
+    command=populateStatisticalAnalysisLists,
 )
-methodListBox = Box(statTable, width=150, height="fill", align="left")
-methodListTitle = Text(methodListBox, text="Period Analysis\nMethods:", align="top")
-methodList = ListBox(
-    methodListBox,
+experimentTabStatisticalAnalysisMethodListFrame = Box(experimentTabStatisticalAnalysisFrame, width=150, height="fill", align="left")
+experimentTabStatisticalAnalysisMethodListTitle = Text(experimentTabStatisticalAnalysisMethodListFrame, text="Statistical\nPeriod Analysis\nMethods:", align="top")
+experimentTabStatisticalAnalysisMethodList = ListBox(
+    experimentTabStatisticalAnalysisMethodListFrame,
     width=120,
     height="fill",
     align="top",
     items=["Manual", "Sokolove-Bushell", "Lomb-Scargle"],
     selected="Manual",
 )
-buttonList = Box(statTable, height="fill", align="right")
-analyzeButt = PushButton(buttonList, text="Analyze", width="fill", command=statAnal, align="top")
-expDataButt = PushButton(buttonList, text="Export\nData", width="fill", pady=2, command=saveData, align="top")
-analTextBox = Box(statTable, width="fill", height="fill", align="right")
-analTextTitle = Text(analTextBox, text="\nStatistical Analysis:", align="top")
-analText = TextBox(analTextBox, multiline=True, width=35, height=18, align="top")
+experimentTabStatisticalAnalysisButtonsFrame = Box(experimentTabStatisticalAnalysisFrame, height="fill", align="right")
+experimentTabStatisticalAnalysisAnalyzeButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Analyze", width="fill", command=performStatisticalAnalysis, align="top")
+experimentTabStatisticalAnalysisExportDataButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Save\nPeriods and\nAnalysis\nData", width="fill", pady=2, command=saveStatisticalAnalysisData, align="top")
+experimentTabStatisticalAnalysisOutputFrame = Box(experimentTabStatisticalAnalysisFrame, width="fill", height="fill", align="right")
+experimentTabStatisticalAnalysisOutputTitle = Text(experimentTabStatisticalAnalysisOutputFrame, text="\n\nStatistical Analysis:", align="top")
+experimentTabStatisticalAnalysisOutputTextBox = TextBox(experimentTabStatisticalAnalysisOutputFrame, multiline=True, width=35, height=18, align="top")
 
-experBoxBot = Box(experFrame, width="fill", height=screen_width*0.2, align="top")
-plotTubeFrame = Box(experBoxBot, width=screen_width*0.45, height="fill", align="left")
-plotTubeFrame.set_border(2, "#9fcdea")
-setListBox2 = Box(plotTubeFrame, width=150, height="fill", align="left")
-setListTitle2 = Text(setListBox2, text="\nSets:", align="top")
-setList2 = ListBox(
-    setListBox2,
+experimentTabBottomContentRow = Box(experimentTabFrame, width="fill", height=screenWidth*0.2, align="top")
+experimentTabPlotTubeSelectionFrame = Box(experimentTabBottomContentRow, width=screenWidth*0.45, height="fill", align="left")
+experimentTabPlotTubeSelectionFrame.set_border(2, "#9fcdea")
+experimentTabPlotTubeSelectionSetListFrame = Box(experimentTabPlotTubeSelectionFrame, width=150, height="fill", align="left")
+experimentTabPlotTubeSelectionSetListTitle = Text(experimentTabPlotTubeSelectionSetListFrame, text="\n\nSets:", align="top")
+experimentTabPlotTubeSelectionSetList = ListBox(
+    experimentTabPlotTubeSelectionSetListFrame,
     scrollbar=True,
     width=150,
     height="fill",
     align="top",
-    command=popPlotTubes,
+    command=populatePlotTubeSelectionLists,
 )
-tubeListBox2 = Box(plotTubeFrame, width=150, height="fill", align="left")
-tubeListTitle2 = Text(tubeListBox2, text="\nTubes:", align="top")
-tubeList2 = ListBox(
-    tubeListBox2,
+experimentTabPlotTubeSelectionTubeListFrame = Box(experimentTabPlotTubeSelectionFrame, width=150, height="fill", align="left")
+experimentTabPlotTubeSelectionTubeListTitle = Text(experimentTabPlotTubeSelectionTubeListFrame, text="\n\nTubes:", align="top")
+experimentTabPlotTubeSelectionTubeList = ListBox(
+    experimentTabPlotTubeSelectionTubeListFrame,
     scrollbar=True,
     width=150,
     height="fill",
     align="top",
-    command=popPlotTubes,
+    command=populatePlotTubeSelectionLists,
 )
-methodListBox2 = Box(plotTubeFrame, width=150, height="fill", align="left")
-methodListTitle2 = Text(methodListBox2, text="Period Analysis\nMethods:", align="top")
-methodList2 = ListBox(
-    methodListBox2,
+experimentTabPlotTubeSelectionMethodListFrame = Box(experimentTabPlotTubeSelectionFrame, width=150, height="fill", align="left")
+experimentTabPlotTubeSelectionMethodListTitle = Text(experimentTabPlotTubeSelectionMethodListFrame, text="Plot\nPeriod Analysis\nMethods:", align="top")
+experimentTabPlotTubeSelectionMethodList = ListBox(
+    experimentTabPlotTubeSelectionMethodListFrame,
     width=120,
     height="fill",
     align="top",
     items=["Sokolove-Bushell", "Lomb-Scargle"],
     selected="Manual",
 )
-plotButtBox = Box(plotTubeFrame, grid=[3, 1])
-plotButt = PushButton(plotButtBox, text="Plot", command=popPlots, width="fill")
-saveDensButt = PushButton(
-    plotButtBox, text="Save Densitogram", pady=2, command=saveDensPlot, width="fill"
+experimentTabPlotTubeSelectionButtonsFrame = Box(experimentTabPlotTubeSelectionFrame)
+experimentTabPlotTubeSelectionCreatePlotsButton = PushButton(experimentTabPlotTubeSelectionButtonsFrame, text="Plot", command=populatePlots, width="fill")
+experimentTabPlotTubeSelectionSaveDensitometryPlotButton = PushButton(
+    experimentTabPlotTubeSelectionButtonsFrame, 
+    text="Save\nDensitometry\nPlot", 
+    pady=2, 
+    command=saveDensitometryPlot, 
+    width="fill"
 )
-saveDensDatButt = PushButton(
-    plotButtBox,
-    text="Save\nDensitogrammetry",
+experimentTabPlotTubeSelectionSaveDensitometryButton = PushButton(
+    experimentTabPlotTubeSelectionButtonsFrame,
+    text="Save\nDensitometry\nData",
     pady=2,
-    command=saveDensData,
+    command=saveDensitometryData,
     width="fill",
 )
-savePerButt = PushButton(
-    plotButtBox, text="Save Periodogram", pady=2, command=savePerPlot, width="fill"
+experimentTabPlotTubeSelectionSavePeriodogramPlotButton = PushButton(
+    experimentTabPlotTubeSelectionButtonsFrame, 
+    text="Save\nPeriodogram\nPlot", 
+    pady=2, 
+    command=savePeriodogramPlot, 
+    width="fill"
 )
-savePerDatButt = PushButton(
-    plotButtBox,
-    text="Save\nPeriodogrammetry",
+experimentTabPlotTubeSelectionSavePeriodogramDataButton = PushButton(
+    experimentTabPlotTubeSelectionButtonsFrame,
+    text="Save\nPeriodogram\nData",
     pady=2,
-    command=savePerData,
+    command=savePeriodogramData,
     width="fill",
 )
-plotFrame = Box(experBoxBot, width=screen_width*0.5, height=screen_width*0.2, align="left")
-plotFrame.set_border(2, "#9fcdea")
-plotCanvas = Canvas(plotFrame.tk, width=screen_width*0.5, height=screen_width*0.2)
-plotFrame.add_tk_widget(plotCanvas)
-print(str(plotTubeFrame.width))
+experimentTabPlotFrame = Box(experimentTabBottomContentRow, width=screenWidth*0.5, height=screenWidth*0.2, align="left")
+experimentTabPlotFrame.set_border(2, "#9fcdea")
+experimentTabPlotCanvas = Canvas(experimentTabPlotFrame.tk, width=screenWidth*0.5, height=screenWidth*0.2)
+experimentTabPlotFrame.add_tk_widget(experimentTabPlotCanvas)
 
-openSetup()
-app.display()
+openAndRun()
