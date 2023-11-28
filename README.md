@@ -18,3 +18,5 @@ Copyright (c) 2023, Alex Keeley
  
 Project based on the 
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.1.
+
+Logo generated with the assistance of [DALL·E](https://labs.openai.com/).
