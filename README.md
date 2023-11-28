@@ -1,4 +1,4 @@
-![rhythmidia](RhythmidiaLogoBanner.jpg)
+![rhythmidia](rhythmidiaLogoBanner.jpg)
 
 Rhythmidia
 ==============================
