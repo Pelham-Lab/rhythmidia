@@ -998,7 +998,7 @@ def saveStatisticalAnalysisData():#all periods etc
     )
     with open(dataFileName, 'w', newline='') as dataFile:
         rowWriter = csv.writer(dataFile, delimiter=',')
-        rowWriter.writerow(["Pack Name", "Tube #", "Period (hrs) (Manually Calculated)", "Period (hrs) (Sokolove-Bushell)", "Period (hrs) (Lomb-Scargle)"])
+        rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Manually Calculated)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])
         for fileRow in fileRows:
             rowWriter.writerow(fileRow)
 
@@ -1201,9 +1201,9 @@ def savePeriodogramData():
     with open(periodogrammetryFileName, 'w', newline='') as csvfile:
         rowWriter = csv.writer(csvfile, delimiter=',')
         if method == 4:
-            rowWriter.writerow(["Frequency", "Period (hrs)", "Spectral Density"])
+            rowWriter.writerow(["Frequency", "τ (hrs)", "Spectral Density"])
         elif method == 6:
-            rowWriter.writerow(["Angular Frequency", "Period (hrs)", "Spectral Density"])
+            rowWriter.writerow(["Angular Frequency", "τ (hrs)", "Spectral Density"])
         for index in range(0, len(periodogramXVals)):
             newLine = [periodogramFrequencies[index], periodogramXVals[index], periodogramYVals[index]]
             rowWriter.writerow(newLine)
@@ -1499,8 +1499,7 @@ def openAndRun():
 
 
 # Create app object
-app = App(layout="auto", title="Rhythmidia")
-#app.image = "./icon.png"
+app = App(layout="auto", title="Rhythmidia (Alpha)")
 app.when_closed = sys.exit
 app.width = screenWidth
 app.height = screenHeight
