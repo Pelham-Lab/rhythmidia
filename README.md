@@ -7,7 +7,7 @@ Rhythmidia
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)-->
 
 
-Race tube image analysis and circadian period elucidation in Python.
+Race tube image analysis and Neurospora Crassa circadian period elucidation in Python.
 
 ### Copyright
 
