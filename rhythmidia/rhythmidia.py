@@ -59,7 +59,9 @@ def setWorkingDirectory():
 def updateAppParameters():
     global appParameters
     
-    with open("./parameters.txt", newline="", mode="w") as parametersFile:  # Open local parameters.txt file
+    index = __file__.rfind("/")
+    path = __file__[:index]+"/parameters.txt"
+    with open(path, newline="", mode="w") as parametersFile:  # Open parameters.txt file
         writer = csv.writer(parametersFile, delimiter="=")  # Define csv writer
         for key in appParameters:  # For each key in parameters dictionary
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
@@ -1472,7 +1474,9 @@ def setupTasksOnOpenAndRun():  # Tasks to run on opening app
     global appParameters
     global workingDir
 
-    with open("./parameters.txt", newline="") as parametersFile:  # Open local parameters.txt file
+    index = __file__.rfind("/")
+    path = __file__[:index]+"/parameters.txt"
+    with open(path, newline="") as parametersFile:  # Open parameters.txt file
         reader = csv.reader(parametersFile, delimiter="=")  # Define csv reader
         for line in reader:  # For each line in parameters.txt
             appParameters[line[0]] = line[1]  # Populate appropriate element of parameters dictionary
