@@ -71,7 +71,7 @@ where = ["."]
 rhythmidia = [
     "py.typed",
     "parameters.txt",
-    "rhythmidiaLogoBanner.jpg"
+    "rhythmidiaLogoBannerText.jpg"
 ]
 
 [tool.versioningit]
