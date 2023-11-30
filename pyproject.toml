@@ -70,7 +70,8 @@ where = ["."]
 [tool.setuptools.package-data]
 rhythmidia = [
     "py.typed",
-    "parameters.txt"
+    "parameters.txt",
+    "rhythmidiaLogoBanner.jpg"
 ]
 
 [tool.versioningit]
