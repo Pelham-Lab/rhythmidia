@@ -1552,6 +1552,11 @@ experimentTab.bg = "#9fcdea"  # Baby blue experiment tab
 homeTabText.when_clicked = selectHomeTab
 experimentTabText.when_clicked = selectExperTab
 
+index = __file__.rfind("/")
+path = __file__[:index]+"/rhythmidiaLogoBannerText.jpg"
+logoFrame = Box(app, width="fill", height=50, align="bottom", layout="auto")
+logoFrame.bg = "grey95"
+logo = Picture(logoFrame, image=path, width=181, height=50, align="left")
 
 # Set up home tab
 homeTabFrame = Box(app, width="fill", height="fill", align="top", layout="auto")
