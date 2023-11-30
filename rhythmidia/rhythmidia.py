@@ -220,7 +220,7 @@ def uploadRaceTubeImage():  # Prompt file upload of race tube image
     imageName = app.select_file(
         title="Select race tube image",
         folder=workingDir,
-        filetypes=[["TIFF", "*.tif"], ["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["SVG", "*.svg"]],
+        filetypes=[["TIFF", "*.tif"], ["TIFF", "*.tiff"], ["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["SVG", "*.svg"]],
         save=False,
         filename="",
     )  # Prompt user to select a .tif image in the working directory to analyze, and set file name as imageName
@@ -344,7 +344,10 @@ def identifyHorizontalLines():
             horizontalLineSlopes.append(slope)  # Add slope to slope list
             horizontalLineIntercepts.append(intercept)  # Add intercept to intercept list
     horizontalLines = []  # Blank global list of tube boundary lines
-    meanTubeSlope = numpy.mean(horizontalLineSlopes)  # Mean slope of horizontal tube boundary lines
+    if len(horizontalLineIntercepts) > 4:
+        meanTubeSlope = numpy.mean(horizontalLineSlopes)  # Mean slope of horizontal tube boundary lines
+    else:
+        meanTubeSlope = 0
     for line in range(0, len(horizontalLineSlopes)):  # For each horizontal line
         isDuplicate = 0  # Whether line is a duplicate of an accepted line (default to 0)
         for lin in horizontalLines:  # For each accepted horizontal line
