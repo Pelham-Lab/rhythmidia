@@ -16,9 +16,9 @@ Race tube image analysis and Neurospora Crassa circadian period elucidation in P
 3. Race tube images can be .tif, .png, .jpg, .jpeg, or .svg
 
 ## Rhythmidia out of the Box
-1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default get race tube images and to which the program will by default save data
-    a. This can be changed later at any time.
-    b. You are not restricted to using this directory, it is purely for your convenience
+1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default get race tube images and to which the program will by default save data<br />
+    a. This can be changed later at any time.<br />
+    b. You are not restricted to using this directory, it is purely for your convenience<br />
 2. That’s it! You can start analyzing images immediately.
 
 ## Uploading and Analyzing an Image
