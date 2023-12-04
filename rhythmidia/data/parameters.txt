@@ -1,5 +1,0 @@
-workingDir=/Users/akeeley/Documents/Python/CronoPy
-colorGraph=#986a2d
-colorHoriz=#00f200
-colorVert=#ff0017
-colorBand=#0090fb
