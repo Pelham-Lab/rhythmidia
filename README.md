@@ -17,7 +17,7 @@ Race tube image analysis and Neurospora Crassa circadian period elucidation in P
 
 ## Rhythmidia out of the Box
 1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default get race tube images and to which the program will by default save data
-    a. This can be changed later at any time
+    a. This can be changed later at any time.
     b. You are not restricted to using this directory, it is purely for your convenience
 2. That’s it! You can start analyzing images immediately.
 
