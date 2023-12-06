@@ -21,7 +21,7 @@ import webbrowser
 screenWidth = pyautogui.size().width  # Get screen width
 screenHeight = pyautogui.size().height  # Get screen height
 numpy.set_printoptions(threshold=sys.maxsize)
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(999999999)
 
 appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue"}  # Dictionary of settings
 openFile = ""  # Name of open experiment file
@@ -59,9 +59,9 @@ def setWorkingDirectory():
 def updateAppParameters():
     global appParameters
     
-    index = __file__.rfind("/")
-    path = __file__[:index]+"/parameters.txt"
-    with open(path, newline="", mode="w") as parametersFile:  # Open parameters.txt file
+    directoryPath = os.path.dirname(__file__)
+    parametersPath = os.path.join(directoryPath, "parameters.txt")
+    with open(parametersPath, newline="", mode="w") as parametersFile:  # Open parameters.txt file
         writer = csv.writer(parametersFile, delimiter="=")  # Define csv writer
         for key in appParameters:  # For each key in parameters dictionary
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
@@ -229,7 +229,7 @@ def uploadRaceTubeImage():  # Prompt file upload of race tube image
     displayRaceTubeImage(rightImage)  # Display race tube image
     lockAndAnalyzeButton.enable()  # Enable button to lock image and analyze
     rotateRaceTubeImageButton.enable()  # Enable button to rotate image 90 degrees
-    restRaceTubeImageAnalysisButton.enable()  # Enable button to reset analysis
+    resetRaceTubeImageAnalysisButton.enable()  # Enable button to reset analysis
 
 
 def rotateRaceTubeImage():  # Rotate race tube image clockwise
@@ -261,7 +261,6 @@ def lockAndAnalyzeRaceTubeImage():
     raceTubeLengthTextBox.disable()  # Disable tube length input
     lockAndAnalyzeButton.disable()  # Disable lock and analyze button
     proceedButton.enable()  # Enable proceed button
-    rescanHorizontalLinesButton.enable() # Enable rescan button
     # Analyze
     finalDeg = 90 * ((rotateDeg / 90) % 4)  # Set final rotation angle to simplified rotation angle
     finalImage = rawImage.rotate(finalDeg, expand=1).resize((1160, 400))  # Set final image to raw image rotated by final rotation angle
@@ -301,6 +300,7 @@ def cancelImageAnalysis():
     densityProfiles = []  # Zero out densitometry
     homeTabConsoleTextBox.value = ""  # Zero out console text box
 
+    saveTubesToFileButton.disable()
     uploadRaceTubeImageButton.enable()  # Enable upload race tube image button
     rotateRaceTubeImageButton.disable()  # Disable rotate image button
     raceTubeLengthTextBox.enable()  # Enable race tube length text box
@@ -330,10 +330,73 @@ def identifyHorizontalLines():
 
     analState = 1  # Set analysis state to 1
     editedImage = numpy.array(finalImage.convert("L"))  # Create numpy array of final image in greyscale
+    
+    rowMeansLeft = []
+    rowMeansRight = []
+    for row in enumerate(list(editedImage)):
+        rowMeansLeft.append(0-int(numpy.mean(row[1][:25])))
+        rowMeansRight.append(0-int(numpy.mean(row[1][550:575])))
+    rowMeansLeftSmooth = savgol_filter(rowMeansLeft, window_length=30, polyorder=2, mode="interp")
+    rowMeansRightSmooth = savgol_filter(rowMeansRight, window_length=30, polyorder=2, mode="interp")
+    rowMeansLeftSmoothMin = numpy.min(rowMeansLeftSmooth)
+    rowMeansRightSmoothMin = numpy.min(rowMeansRightSmooth)
+    for num in range(0, 400):
+        rowMeansLeftSmooth[num] -= rowMeansLeftSmoothMin
+        rowMeansRightSmooth[num] -= rowMeansRightSmoothMin
+    rowMeansLeftMinimaIndices = find_peaks(rowMeansLeftSmooth, distance=25, threshold=(None, None), height=0.88*numpy.max(rowMeansLeftSmooth), prominence=5, wlen=300)[0].tolist()
+    rowMeansRightMinimaIndices = find_peaks(rowMeansRightSmooth, distance=25, threshold=(None, None), height=0.88*numpy.max(rowMeansRightSmooth), prominence=5, wlen=300)[0].tolist()
+    rowMeansLeftMinima = []
+    rowMeansRightMinima = []
+    for peakIndex in rowMeansLeftMinimaIndices:  # For each peak index
+            peakX = peakIndex  # Set x to peak index
+            peakY = rowMeansLeftSmooth[peakIndex]  # Set y to midline of tube at x
+            slopesLeft = []  # Blank list of slopes left of peak
+            slopesRight = []  # Blank list of slopes right of peak
+            for xWalk in range(2, 12, 2):  # For each x to one side or the other of peak
+                if peakX + xWalk < 1160:  # If xWalk to the right is within image
+                    slopesRight.append(abs((rowMeansLeftSmooth[peakX + xWalk] - rowMeansLeftSmooth[peakX + xWalk - 2])) / 2)  # Add granular slope to list of slopes
+                if peakX - xWalk > 0:  # If xWalk to the left is within image
+                    slopesLeft.append(abs((rowMeansLeftSmooth[peakX - xWalk] - rowMeansLeftSmooth[peakX - xWalk + 2])) / 2)  # Add granular slope to list of slopes
+            slopeRight = numpy.mean(slopesRight)  # Mean slope to right of peak
+            slopeLeft = numpy.mean(slopesLeft)  # Mean slope to left of peak
+            slopeMin = numpy.min([slopeLeft, slopeRight])  # Minimum of two adjacent slopes to peak
+            if peakX > 10 and peakX < 1150 and slopeMin > 1:  # If x is not on edges of image
+                rowMeansLeftMinima.append(peakY)  # Add time mark to list of time mark lines
+    for peakIndex in rowMeansLeftMinimaIndices:  # For each peak index
+            peakX = peakIndex  # Set x to peak index
+            peakY = rowMeansRightSmooth[peakIndex]  # Set y to midline of tube at x
+            slopesLeft = []  # Blank list of slopes left of peak
+            slopesRight = []  # Blank list of slopes right of peak
+            for xWalk in range(2, 12, 2):  # For each x to one side or the other of peak
+                if peakX + xWalk < 1160:  # If xWalk to the right is within image
+                    slopesRight.append(abs((rowMeansRightSmooth[peakX + xWalk] - rowMeansRightSmooth[peakX + xWalk - 2])) / 2)  # Add granular slope to list of slopes
+                if peakX - xWalk > 0:  # If xWalk to the left is within image
+                    slopesLeft.append(abs((rowMeansRightSmooth[peakX - xWalk] - rowMeansRightSmooth[peakX - xWalk + 2])) / 2)  # Add granular slope to list of slopes
+            slopeRight = numpy.mean(slopesRight)  # Mean slope to right of peak
+            slopeLeft = numpy.mean(slopesLeft)  # Mean slope to left of peak
+            slopeMin = numpy.min([slopeLeft, slopeRight])  # Minimum of two adjacent slopes to peak
+            if peakX > 10 and peakX < 1150 and slopeMin > 1:  # If x is not on edges of image
+                rowMeansRightMinima.append(peakY)  # Add time mark to list of time mark lines
+    rowMeansLeftMinimaIndices.append(5)
+    rowMeansLeftMinimaIndices.append(395)
+    horizontalLineSlopes1 = []  # Empty list of slopes
+    horizontalLineIntercepts1 = []  # Empty list of y intercepts
+    for minIndex in rowMeansLeftMinimaIndices:#each left index
+        leftYVal = minIndex
+        rightYVal = minIndex
+        for yVal in rowMeansRightMinimaIndices:
+            if abs(yVal-leftYVal) <= 15:
+                rightYVal = yVal
+        slope = (rightYVal - leftYVal) / (562.5-12.5) # Set slope to slope of line calculated as rise/run#get slope with corresponding right index
+        intercept = (leftYVal - slope * 12.5) #set intercept
+        horizontalLineSlopes1.append(slope)
+        horizontalLineIntercepts1.append(intercept)
+
+
     cannyEdges = canny(editedImage, 2, 1, 25)  # Detect edges of greyscale image
     likelyHorizontalLines = probabilistic_hough_line(cannyEdges, threshold=10, line_length=75, line_gap=5)  # Get long lines from canny edges
-    horizontalLineSlopes = []  # Empty list of slopes
-    horizontalLineIntercepts = []  # Empty list of y intercepts
+    horizontalLineSlopes2 = []  # Empty list of slopes
+    horizontalLineIntercepts2 = []  # Empty list of y intercepts
     for line in likelyHorizontalLines:  # For each probabilistic hough line
         if (line[1][0] - line[0][0]) == 0:  # If line is vertical
             slope = numpy.inf  # Set slope to infinity to avoid dividing by 0
@@ -341,8 +404,16 @@ def identifyHorizontalLines():
             slope = (line[1][1] - line[0][1]) / (line[1][0] - line[0][0])  # Set slope to slope of line calculated as rise/run
         intercept = (line[0][1] - slope * line[0][0])  # Set intercept to intercept of line calculated using slope and y position
         if abs(slope) < 2:  # If slope is not too steep
-            horizontalLineSlopes.append(slope)  # Add slope to slope list
-            horizontalLineIntercepts.append(intercept)  # Add intercept to intercept list
+            horizontalLineSlopes2.append(slope)  # Add slope to slope list
+            horizontalLineIntercepts2.append(intercept)  # Add intercept to intercept list
+
+    if len(horizontalLineIntercepts1) > len(horizontalLineIntercepts2):
+        horizontalLineIntercepts = horizontalLineIntercepts1
+        horizontalLineSlopes = horizontalLineSlopes1
+    else:
+        horizontalLineIntercepts = horizontalLineIntercepts2
+        horizontalLineSlopes = horizontalLineSlopes2
+
     horizontalLines = []  # Blank global list of tube boundary lines
     if len(horizontalLineIntercepts) > 4:
         meanTubeSlope = numpy.mean(horizontalLineSlopes)  # Mean slope of horizontal tube boundary lines
@@ -352,9 +423,12 @@ def identifyHorizontalLines():
         isDuplicate = 0  # Whether line is a duplicate of an accepted line (default to 0)
         for lin in horizontalLines:  # For each accepted horizontal line
             if (
-                abs(horizontalLineIntercepts[line] - lin[1]) < 20
-                or abs(meanTubeSlope - horizontalLineSlopes[line]) > 0.015
-                or (numpy.sign(meanTubeSlope) != numpy.sign(horizontalLineSlopes[line]))
+                (len(horizontalLineIntercepts2) > len(horizontalLineIntercepts1))
+                and (
+                    abs(horizontalLineIntercepts[line] - lin[1]) < 20
+                    or abs(meanTubeSlope - horizontalLineSlopes[line]) > 0.015
+                    or (numpy.sign(meanTubeSlope) != numpy.sign(horizontalLineSlopes[line]))
+                )
             ):  # If line intercept is too close to an accepted line, or slope is too divergent from mean slope of set, or sign of slope is different from mean slope
                 isDuplicate = 1  # Line is a duplicate
         if isDuplicate == 0:  # If line is not a duplicate
@@ -411,9 +485,9 @@ def identifyTimeMarks():
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeWidth = tube[0][1] - tube[0][0]  # Record width of current tube at left end
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube within tubeBounds
-        densityProfile = generateDensityProfile(editedImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
-        densityProfileSmooth = savgol_filter(densityProfile, window_length=30, polyorder=3, mode="interp")  # Create Savitzky-Golay smoothed density profile of marks-corrected dataset
-        peakIndices = find_peaks(densityProfileSmooth, distance=25, threshold=(None, None), prominence=5, wlen=300)[0].tolist()  # Get indices of local maxima of smoothed density profile
+        densityProfile = generateDensityProfile(editedImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 20))  # Create density profile of current tube
+        densityProfileSmooth = savgol_filter(densityProfile, window_length=30, polyorder=8, mode="interp")  # Create Savitzky-Golay smoothed density profile of marks-corrected dataset
+        peakIndices = find_peaks(densityProfileSmooth, distance=5, threshold=(None, None), prominence=3, wlen=300)[0].tolist()  # Get indices of local maxima of smoothed density profile
         for peakIndex in peakIndices:  # For each peak index
             peakX = peakIndex  # Set x to peak index
             peakY = (tube[peakIndex][0] + (tube[peakIndex][1] - tube[peakIndex][0]) / 2)  # Set y to midline of tube at x
@@ -427,7 +501,20 @@ def identifyTimeMarks():
             slopeRight = numpy.mean(slopesRight)  # Mean slope to right of peak
             slopeLeft = numpy.mean(slopesLeft)  # Mean slope to left of peak
             slopeMin = numpy.min([slopeLeft, slopeRight])  # Minimum of two adjacent slopes to peak
-            if peakX > 10 and peakX < 1150 and slopeMin > 1:  # If x is not on edges of image
+            xWalk = 1
+            while densityProfileSmooth[peakX-xWalk] <= densityProfileSmooth[peakX-xWalk+1] and peakX-xWalk > 1:
+                xWalk += 1
+            baseLeft = peakX - xWalk
+            baseYLeft = densityProfileSmooth[baseLeft]
+            xWalk = 1
+            while densityProfileSmooth[peakX+xWalk] <= densityProfileSmooth[peakX+xWalk-1] and peakX+xWalk < 1159:
+                xWalk += 1
+            baseRight = peakX + xWalk
+            baseYRight = densityProfileSmooth[baseRight]
+            promLeft = densityProfileSmooth[peakX] - baseYLeft
+            promRight = densityProfileSmooth[peakX] - baseYRight
+            prominenceFraction = numpy.max([promLeft, promRight])/numpy.max(densityProfileSmooth)
+            if prominenceFraction > .2 and prominenceFraction < 0.9 and slopeMin > (-20/3)*prominenceFraction+(26/3):
                 timeMarkLines.append([peakX, peakY, tubeNumber])  # Add time mark to list of time mark lines
         drawLines()  # Add lines to image
     analState = 5  # Set analysis state to 5
@@ -689,7 +776,7 @@ def populateExperimentDataTable(tubesMaster):
         ],
         ["", "", "", "", "", "", ""],
     ]  # Populate table rows with headers and a blank row
-    maxColumnLengths = [6, 5, 6, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
+    maxColumnLengths = [6, 5, 7, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
     for tube in tubesMaster:  # For each tube in master tube list
         tubePeriods = calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])  # Calculate periods and periodograms for current tube
         tableRows.append(
@@ -1290,7 +1377,6 @@ def proceedHandler():
 
     match analState:  # Based on analysis state
         case 2:  # Analysis state 2 (tube bounds)
-            rescanHorizontalLinesButton.disable()
             identifyRaceTubeBounds()
         case 5:  # Analysis state 5 (time marks)
             identifyBanding()
@@ -1471,15 +1557,43 @@ def graphicsPreferencesPromptUpdate(texts):
     texts[3].bg = invertColor(appParameters["colorBand"])
 
 
+def displaySetImagePopup():
+    global tubesMaster
+    #global experimentTabTableTextBox
+    global experimentTabPlotTubeSelectionSetList
+
+    #fontSizePt = experimentTabTableTextBox.text_size
+    #fontSizeMap = {7:9, 8:11, 9:12, 10:13, 11:14, 12:16, 13:17, 14:19, 15:20}
+    #fontHeightPx = fontSizeMap[fontSizePt]
+    #fontHeightPx = 4*fontSizePt/3+1
+    #textBoxLine = clickData.y/fontHeightPx
+    #print(textBoxLine)
+    #print(clickData.y)
+    
+    tubeNumber = -1
+    for tube in enumerate(tubesMaster):
+        if tube[1][0]:
+            tubeNumber = tube[0]
+    #tubeNumber = 3
+    setName = tubesMaster[tubeNumber][0]
+    imageName = tubesMaster[tubeNumber][1]
+    imageData = tubesMaster[tubeNumber][2]
+    imageArray = numpy.array(imageData).astype(numpy.uint8)
+    imageConverted = Image.fromarray(imageArray).convert('RGB')
+    imageThumbnailWindow = Window(app, title="Pack Image: "+setName+" ("+imageName+")", width=1160, height=400)
+    imageThumbnailPicture = Drawing(imageThumbnailWindow, width="fill", height="fill")
+    imageThumbnailPicture.image(0, 0, imageConverted, 1160, 400)
+    imageThumbnailWindow.show()
+
 
 def setupTasksOnOpenAndRun():  # Tasks to run on opening app
     """Tasks to run open opening the application. Reads in local parameters file to get user-defined settings, and preselects home tab."""
     global appParameters
     global workingDir
 
-    index = __file__.rfind("/")
-    path = __file__[:index]+"/parameters.txt"
-    with open(path, newline="") as parametersFile:  # Open parameters.txt file
+    directoryPath = os.path.dirname(__file__)
+    parametersPath = os.path.join(directoryPath, "parameters.txt")
+    with open(parametersPath, newline="") as parametersFile:  # Open parameters.txt file
         reader = csv.reader(parametersFile, delimiter="=")  # Define csv reader
         for line in reader:  # For each line in parameters.txt
             appParameters[line[0]] = line[1]  # Populate appropriate element of parameters dictionary
@@ -1500,6 +1614,7 @@ def openAndRun():
     Dull orange: #deb15e
     Dull blue: #9fcdea
     Light grey: grey95
+    Rhythmidia logo red orange: #e05b4c or #eab47c
     """
     setupTasksOnOpenAndRun()
     app.display()
@@ -1549,23 +1664,24 @@ experimentTabText = Text(
 )  # Home tab button text
 # Set up tab colors
 navigationTabsFrame.bg = "#676975"  # Dark grey nav bar
-homeTab.bg = "#deb15e"  # Conidia orange home tab
+homeTab.bg = "#eab47c"  # Conidia orange home tab
 experimentTab.bg = "#9fcdea"  # Baby blue experiment tab
 # Set up tab functions
 homeTabText.when_clicked = selectHomeTab
 experimentTabText.when_clicked = selectExperTab
 
-index = __file__.rfind("/")
-path = __file__[:index]+"/rhythmidiaLogoBannerText.jpg"
+directoryPath = os.path.dirname(__file__)
+imagePath = os.path.join(directoryPath, "rhythmidiaLogoBannerText.jpg")
 logoFrame = Box(app, width="fill", height=50, align="bottom", layout="auto")
 logoFrame.bg = "grey95"
-logo = Picture(logoFrame, image=path, width=181, height=50, align="left")
+logo = Picture(logoFrame, image=imagePath, width=181, height=50, align="left")
 
 # Set up home tab
 homeTabFrame = Box(app, width="fill", height="fill", align="top", layout="auto")
 homeTabFrame.bg = "grey95"
-homeTabFrame.set_border(5, "#deb15e")
+homeTabFrame.set_border(5, "#eab47c")
 homeTabFrame.text_color = "black"
+homeTabVerticalSpacer1 = Box(homeTabFrame, height=5, width="fill", align="top")
 # Home buttons
 homeTabTopButtonRowFrame = Box(
     homeTabFrame, width="fill", height="20", align="top", layout="grid", border="0"
@@ -1573,11 +1689,12 @@ homeTabTopButtonRowFrame = Box(
 uploadRaceTubeImageButton = PushButton(
     homeTabTopButtonRowFrame, grid=[0, 0], text="Upload Race Tube Image", command=uploadRaceTubeImage
 )
+homeTabTopButtonRowSpacer1 = Box(homeTabTopButtonRowFrame, grid=[1,0], height="fill", width=5)
 rotateRaceTubeImageButton = PushButton(
-    homeTabTopButtonRowFrame, grid=[1, 0], text="Rotate Image", command=rotateRaceTubeImage
+    homeTabTopButtonRowFrame, grid=[2, 0], text="Rotate Image", command=rotateRaceTubeImage
 )
 rotateRaceTubeImageButton.disable()
-raceTubeLengthFrame = Box(homeTabTopButtonRowFrame, grid=[2, 0], border="0", height="20", layout="grid")
+raceTubeLengthFrame = Box(homeTabTopButtonRowFrame, grid=[3, 0], border="0", height="20", layout="grid")
 raceTubeLengthLabel = Text(
     raceTubeLengthFrame,
     color="black",
@@ -1585,11 +1702,12 @@ raceTubeLengthLabel = Text(
     text="Length from first to last\ntime mark of 1st tube (mm)",
 )
 raceTubeLengthTextBox = TextBox(raceTubeLengthFrame, text="300", grid=[1, 0])
+homeTabTopButtonRowSpacer2 = Box(homeTabTopButtonRowFrame, grid=[4,0], height="fill", width=5)
 lockAndAnalyzeButton = PushButton(
-    homeTabTopButtonRowFrame, grid=[3, 0], text="Lock and Analyze", command=lockAndAnalyzeRaceTubeImage
+    homeTabTopButtonRowFrame, grid=[5, 0], text="Lock and Analyze", command=lockAndAnalyzeRaceTubeImage
 )
 lockAndAnalyzeButton.disable()
-
+homeTabVerticalSpacer2 = Box(homeTabFrame, height=5, width="fill", align="top")
 homeTabMiddleContentFrame = Box(homeTabFrame, align="top", border="0", width="fill")
 timeMarkTableFrame = Box(homeTabMiddleContentFrame, width=180, height=400, align="left")
 timeMarkTableRows = [Box(timeMarkTableFrame, align="top", layout="grid", width="fill")]
@@ -1622,17 +1740,19 @@ for row in range(1, 11):
     timeMarkTableDataTextBoxes.append(TextBox(timeMarkTableRows[row], grid=[3, 0], text="0", width=3))
 homeTabRaceTubeImageFrame = Box(homeTabMiddleContentFrame, width=1160, height=400, align="left")
 homeTabRaceTubeImageObject = Drawing(homeTabRaceTubeImageFrame, width="fill", height="fill")
-homeTabBottomButtonRowFrame = Box(homeTabFrame, width="fill", height="50")
-rescanHorizontalLinesButton = PushButton(homeTabBottomButtonRowFrame, text="Rescan", command=identifyHorizontalLines, align="left")
-rescanHorizontalLinesButton.disable()
+homeTabVerticalSpacer3 = Box(homeTabFrame, height=5, width="fill", align="top")
+homeTabBottomButtonRowFrame = Box(homeTabFrame, width="fill", height=50)
 proceedButton = PushButton(homeTabBottomButtonRowFrame, text="Proceed", command=proceedHandler, align="left")
 proceedButton.disable()
+homeTabBottomButtonRowFrameSpacer1 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
 homeTabConsoleTextBox = TextBox(homeTabBottomButtonRowFrame, width=80, height=4, multiline=True, align="left")
 homeTabConsoleTextBox.disable()
+homeTabBottomButtonRowFrameSpacer2 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
 saveTubesToFileButton = PushButton(homeTabBottomButtonRowFrame, text="Save Tubes to File", command=saveTubesToFilePrompt, align="left")
 saveTubesToFileButton.disable()
-restRaceTubeImageAnalysisButton = PushButton(homeTabBottomButtonRowFrame, text="Cancel image analysis", command=cancelImageAnalysis, align="left")
-restRaceTubeImageAnalysisButton.disable()
+homeTabBottomButtonRowFrameSpacer3 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
+resetRaceTubeImageAnalysisButton = PushButton(homeTabBottomButtonRowFrame, text="Cancel image analysis", command=cancelImageAnalysis, align="left")
+resetRaceTubeImageAnalysisButton.disable()
 homeTabPreliminaryDataAnalysisFrame = Box(homeTabFrame, width="fill", height=400, align="top")
 homeTabPreliminaryDataAnalysisTextBox = Text(homeTabPreliminaryDataAnalysisFrame, font="Courier", size=14, align="top")
 # Set up home tab colors
@@ -1652,6 +1772,8 @@ experimentTabFrame.set_border(5, "#9fcdea")
 experimentTabTopContentRow = Box(experimentTabFrame, width="fill", height=appHeight*0.22, align="top")
 experimentTabTableFrame = Box(experimentTabTopContentRow, width=screenWidth*0.45, height=appHeight*0.22, align="left")
 experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill")
+experimentTabTableTextBox.disable()
+experimentTabTableTextBox.when_double_clicked = displaySetImagePopup
 experimentTabTableTextBox.wrap = False
 experimentTabTableTextBox.font = "Courier"
 experimentTabTableFrame.set_border(2, "#9fcdea")
@@ -1702,6 +1824,7 @@ experimentTabPlotTubeSelectionFrame = Box(experimentTabBottomContentRow, width=s
 experimentTabPlotTubeSelectionFrame.set_border(2, "#9fcdea")
 experimentTabPlotTubeSelectionSetListFrame = Box(experimentTabPlotTubeSelectionFrame, width=150, height="fill", align="left")
 experimentTabPlotTubeSelectionSetListTitle = Text(experimentTabPlotTubeSelectionSetListFrame, text="\n\nSets:", align="top")
+experimentTabSetImagePopupButton = PushButton(experimentTabPlotTubeSelectionSetListFrame, text="Display pack image", align="bottom", width=150, height=0, command=displaySetImagePopup)
 experimentTabPlotTubeSelectionSetList = ListBox(
     experimentTabPlotTubeSelectionSetListFrame,
     scrollbar=True,
