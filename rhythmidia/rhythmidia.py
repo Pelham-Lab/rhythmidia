@@ -88,9 +88,9 @@ def openExperimentFile(reopen=False):  # Open an experiment file
     with open(openFile, newline="") as experimentFile:  # Open user-specified txt file
         tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader
         for tube in tubesInFile:  # For each line of experiment file
-            parsedTube = []  # Blank variable for parsed tube
-            parsedTube.append(str(tube[0]))  # Add string of set name to parsed tube data
-            parsedTube.append(str(tube[1]))  # Add string of image name to parsed tube data
+            parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank variable for parsed tube
+            parsedTube["setName"] = str(tube[0])
+            parsedTube["imageName"] = str(tube[1])
             imageData = []  # Blank image data variable
             imageDataRaw = tube[2][1:-1].split("],[")  # Image data from file as list
             for row in imageDataRaw:  # For each row of image data
@@ -99,9 +99,9 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                     if pixel != "":  # If value is not blank
                         dataRow.append(int(pixel))  # Convert value to integer and add to row data
                 imageData.append(dataRow)  # Add row data to image data
-            parsedTube.append(imageData)  # Add parsed image data to parsed tube data
-            parsedTube.append(int(tube[3]))  # Add integer of tube number in set to parsed tube data
-            markHoursRaw = (
+            parsedTube["imageData"] = imageData
+            parsedTube["tubeNumber"] = int(tube[3])
+            markHours = (
                 tube[4]
                 .strip()
                 .replace(" ", "")
@@ -109,10 +109,10 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 .replace("]", "")
                 .split(",")
             )  # Raw list of mark hour values
-            for hours in enumerate(markHoursRaw):  # For each element of raw mark hours data
-                markHoursRaw[hours[0]] = float(hours[1])  # Convert value to float from string
-            parsedTube.append(markHoursRaw)  # Add parsed mark hours values to parsed tube data
-            densityProfilesRaw = (
+            for hours in enumerate(markHours):  # For each element of raw mark hours data
+                markHours[hours[0]] = float(hours[1])  # Convert value to float from string
+            parsedTube["markHours"] = markHours
+            densityProfile = (
                 tube[5]
                 .strip()
                 .replace(" ", "")
@@ -120,10 +120,10 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 .replace("]", "")
                 .split(",")
             )  # Raw list of densitometry values
-            for num in enumerate(densityProfilesRaw):  # For each element of raw densitometry data
-                densityProfilesRaw[num[0]] = float(num[1])  # Convert value to float from string
-            parsedTube.append(densityProfilesRaw)  # Add parsed densitometry values to parsed tube data
-            parsedTube.append(float(tube[6]))  # Add integer of growth rate to parsed tube data
+            for num in enumerate(densityProfile):  # For each element of raw densitometry data
+                densityProfile[num[0]] = float(num[1])  # Convert value to float from string
+            parsedTube["densityProfile"] = densityProfile
+            parsedTube["growthRate"] = float(tube[6])
             tubeBoundsRaw = (tube[7][1:-1].replace(" ", "").split("],["))  # Raw list of tube boundary doubles
             pairs = []  # Blank list of tube boundary doubles
             for pairRaw in tubeBoundsRaw:  # For each double in raw list of tube boundary doubles
@@ -131,7 +131,7 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 for yVal in enumerate(pair):  # For each number in boundary double
                     pair[yVal[0]] = float(yVal[1])  # Convert number to float from string
                 pairs.append(pair)  # Add boundary double to list of tube boundary doubles
-            parsedTube.append(pairs)  # Add parsed tube boundary doubles to parsed tube data
+            parsedTube["tubeRange"] = pairs
             timeMarks = (
                 tube[8]
                 .strip()
@@ -142,7 +142,7 @@ def openExperimentFile(reopen=False):  # Open an experiment file
             )  # Raw list of time mark x positions
             for xVal in enumerate(timeMarks):  # For each element of raw time marks data
                 timeMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
-            parsedTube.append(timeMarks)  # Add parsed time mark x values to parsed tube data
+            parsedTube["timeMarks"] = timeMarks
             bandMarks = (
                 tube[9]
                 .strip()
@@ -153,7 +153,7 @@ def openExperimentFile(reopen=False):  # Open an experiment file
             )  # Raw list of band marks positions
             for xVal in enumerate(bandMarks):  # For each element of raw band marks data
                 bandMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
-            parsedTube.append(bandMarks)  # Add parsed band marks values to parsed tube data
+            parsedTube["bandMarks"] = bandMarks
             tubesMaster.append(parsedTube)  # Add parsed tube data to master list of tubes
         populateExperimentDataTable(tubesMaster)  # Populate experiment data table
         populateStatisticalAnalysisLists()  # Populate statistical analysis frame
@@ -172,7 +172,8 @@ def saveExperimentFile():  # Save current experiment
         with open(openFile, newline="", mode="w") as experimentFile:  # Open current experiment file
             writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer
             for tube in tubesMaster:  # For each tube in master tube list
-                writer.writerow(tube)  # Write new line for tube to experiment file
+                tubeValuesList = list(tube.values())
+                writer.writerow(tubeValuesList)  # Write new line for tube to experiment file
         openExperimentFile(True)  # Open current experiment again to update application
 
 
@@ -514,7 +515,7 @@ def identifyTimeMarks():
             promLeft = densityProfileSmooth[peakX] - baseYLeft
             promRight = densityProfileSmooth[peakX] - baseYRight
             prominenceFraction = numpy.max([promLeft, promRight])/numpy.max(densityProfileSmooth)
-            if prominenceFraction > .2 and prominenceFraction < 0.9 and slopeMin > (-20/3)*prominenceFraction+(26/3):
+            if prominenceFraction > .2 and prominenceFraction < 0.9 and slopeMin > (-20/3)*prominenceFraction+(26/3) and peakX > 10 and peakX < 1150:
                 timeMarkLines.append([peakX, peakY, tubeNumber])  # Add time mark to list of time mark lines
         drawLines()  # Add lines to image
     analState = 5  # Set analysis state to 5
@@ -588,7 +589,7 @@ def identifyBanding():
         for peakIndex in peakIndices:  # For each peak index in smoothed density profile
             peakX = peakIndex  # Set x to index
             peakY = (tube[peakIndex][0] + (tube[peakIndex][1] - tube[peakIndex][0])/2)  # Set y to midline of tube
-            if peakX > numpy.min(list(line[0] for line in timeMarkLines)):  # If band is further right than the first time mark for its tube
+            if peakX > numpy.min(list(line[0] for line in timeMarkLines)) and peakX < 1150:  # If band is further right than the first time mark for its tube
                 bandLines.append([peakX, peakY, tubeNumber])  # Add band to list
     drawLines()  # Draw lines
     analState = 7  # Set analysis state to 7
@@ -778,33 +779,33 @@ def populateExperimentDataTable(tubesMaster):
     ]  # Populate table rows with headers and a blank row
     maxColumnLengths = [6, 5, 7, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
     for tube in tubesMaster:  # For each tube in master tube list
-        tubePeriods = calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])  # Calculate periods and periodograms for current tube
+        tubePeriods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])  # Calculate periods and periodograms for current tube
         tableRows.append(
             [
                 str(tubesMaster.index(tube) + 1),
-                str(tube[0]),
-                str(tube[3] + 1),
+                str(tube["setName"]),
+                str(tube["tubeNumber"] + 1),
                 str(round(tubePeriods[0], 3)) + " hrs",
                 str(round(tubePeriods[1], 3)) + " hrs",
                 str(round(tubePeriods[2], 3)) + " hrs",
-                str(tube[6])
+                str(tube["growthRate"])
             ]
         )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
         # Update max column lengths to fit data
         if len(str(tubesMaster.index(tube) + 1)) + 1 > maxColumnLengths[0]:
             maxColumnLengths[0] = len(str(tubesMaster.index(tube) + 1)) + 1
-        if len(str(tube[0])) + 1 > maxColumnLengths[1]:
-            maxColumnLengths[1] = len(str(tube[0])) + 1
-        if len(str(tube[3] + 1)) + 1 > maxColumnLengths[2]:
-            maxColumnLengths[2] = len(str(tube[3] + 1)) + 1
+        if len(str(tube["setName"])) + 1 > maxColumnLengths[1]:
+            maxColumnLengths[1] = len(str(tube["setName"])) + 1
+        if len(str(tube["tubeNumber"] + 1)) + 1 > maxColumnLengths[2]:
+            maxColumnLengths[2] = len(str(tube["tubeNumber"] + 1)) + 1
         if len(str(round(tubePeriods[0], 3))) + 1 > maxColumnLengths[3]:
             maxColumnLengths[3] = len(str(round(tubePeriods[0], 3))) + 1
         if len(str(round(tubePeriods[1], 3))) + 1 > maxColumnLengths[4]:
             maxColumnLengths[4] = len(str(round(tubePeriods[1], 3))) + 1
         if len(str(round(tubePeriods[2], 3))) + 1 > maxColumnLengths[5]:
             maxColumnLengths[5] = len(str(round(tubePeriods[2], 3))) + 1
-        if len(str(tube[6])) + 1 > maxColumnLengths[6]:
-            maxColumnLengths[6] = len(str(tube[6])) + 1
+        if len(str(tube["growthRate"])) + 1 > maxColumnLengths[6]:
+            maxColumnLengths[6] = len(str(tube["growthRate"])) + 1
     tableText = ""  # Blank string for experiment table text
     for row in tableRows:  # For each row of table rows list
         for col in range(0, len(tableRows[0])):  # For each column
@@ -828,10 +829,10 @@ def populateStatisticalAnalysisLists():
     if tubesSelected is None:  # If no tubes are selected
         tubesSelected = []  # Set tubesSelected to blank list instead of None
     for tube in tubesMaster:  # For each tube in master tubes list
-        if tube[0] not in setsToDisplay:  # If tube set name is not in list of set options
-            setsToDisplay.append(tube[0])  # Add tube set name to list of set options
-        if tube[0] in setsSelected:  # If tube set name is in list of selected sets
-            tubesToDisplay.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
+        if tube["setName"] not in setsToDisplay:  # If tube set name is not in list of set options
+            setsToDisplay.append(tube["setName"])  # Add tube set name to list of set options
+        if tube["setName"] in setsSelected:  # If tube set name is in list of selected sets
+            tubesToDisplay.append(tube["setName"] + " | " + str(tube["tubeNumber"] + 1))  # Add set and tube to list of tube options
     experimentTabStatisticalAnalysisSetList.destroy()
     experimentTabStatisticalAnalysisTubeList.destroy()
     experimentTabStatisticalAnalysisSetList = ListBox(
@@ -876,8 +877,8 @@ def performStatisticalAnalysis():
             method = 2  # Set method to 2
     selectedPeriods = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
-        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            selectedPeriods.append(calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[method])  # Add selected period to list of periods for analysis
+        if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
+            selectedPeriods.append(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[method])  # Add selected period to list of periods for analysis
     meanPeriod = numpy.mean(selectedPeriods)  # Calculate mean of selected periods
     standardDeviation = numpy.std(selectedPeriods)  # Calculate standard deviation of selected periods
     standardErrorOfMeans = standardDeviation / numpy.sqrt(len(selectedPeriods))  # Calculate standard error of selected periods
@@ -918,10 +919,10 @@ def populatePlots():
     timeMarks = []
     markHours = []
     for tube in tubesMaster:
-        if (tube[0] + " | " + str(tube[3] + 1)) == tubesSelected:
+        if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) == tubesSelected:
             tubeToPlot = tube
-    timeMarks = tubeToPlot[8]
-    markHours = tubeToPlot[4]
+    timeMarks = tubeToPlot["timeMarks"]
+    markHours = tubeToPlot["markHours"]
     densitometryXValsRaw = list(range(0, 1160))
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
@@ -932,14 +933,14 @@ def populatePlots():
     for xPixel in densitometryXValsRaw:
         densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
     timeMarksHours = []
-    for xPixel in tubeToPlot[8]:
+    for xPixel in tubeToPlot["timeMarks"]:
         timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
     bandMarksHours = []
-    for xPixel in tubeToPlot[9]:
+    for xPixel in tubeToPlot["bandMarks"]:
         bandMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
-    densitometryYVals = tubeToPlot[5]
+    densitometryYVals = tubeToPlot["densityProfile"]
     #Create period plot data
-    periodData = calculatePeriodData(tubeToPlot[5], markHours, timeMarks, tubeToPlot[9], 14, 32, tubeToPlot[7])
+    periodData = calculatePeriodData(tubeToPlot["densityProfile"], markHours, timeMarks, tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"])
     periodogramXVals = []
     periodogramYVals = []
     calculatedPeriodogramFrequencies = periodData[method-1]
@@ -1029,10 +1030,10 @@ def populatePlotTubeSelectionLists():
     if tubesSelected is None:  # If no tube selected
         tubesSelected = ""  # Set selected set to blank string instead of None
     for tube in tubesMaster:  # For each tube in master tubes list
-        if tube[0] not in setsToDisplay:  # If set name of tube is not in list of set options
-            setsToDisplay.append(tube[0])  # Add tube set name to list of set options
-        if tube[0] in setsSelected:  # If tube set name is in list of selected sets
-            tubesToDisplay.append(tube[0] + " | " + str(tube[3] + 1))  # Add set and tube to list of tube options
+        if tube["setName"] not in setsToDisplay:  # If set name of tube is not in list of set options
+            setsToDisplay.append(tube["setName"])  # Add tube set name to list of set options
+        if tube["setName"] in setsSelected:  # If tube set name is in list of selected sets
+            tubesToDisplay.append(tube["setName"] + " | " + str(tube["tubeNumber"] + 1))  # Add set and tube to list of tube options
     experimentTabPlotTubeSelectionTubeList.destroy()
     experimentTabPlotTubeSelectionSetList.destroy()
     experimentTabPlotTubeSelectionSetList = ListBox(
@@ -1068,8 +1069,8 @@ def saveStatisticalAnalysisData():#all periods etc
     tubesSelected = experimentTabStatisticalAnalysisTubeList.value
     fileRows = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
-        if (tube[0] + " | " + str(tube[3] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            fileRow = [tube[0], str(tube[3]+1)] + list(calculatePeriodData(tube[5], tube[4], tube[8], tube[9], 14, 32, tube[7])[0:3])
+        if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
+            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[0:3])
             fileRows.append(fileRow)  # Add selected period to list of periods for analysis
     periodsManual = []
     periodsSokoloveBushell= []
@@ -1210,11 +1211,11 @@ def saveDensitometryData():
     bandMarks = []
     markHours = []
     for tube in tubesMaster:
-        if tube[0] == setName and tube[3] == tubeNumber:
-            densityProfile = tube[5]
-            timeMarks = tube[8]
-            bandMarks = tube[9]
-            markHours = tube[4]
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:
+            densityProfile = tube["densityProfile"]
+            timeMarks = tube["timeMarks"]
+            bandMarks = tube["bandMarks"]
+            markHours = tube["markHours"]
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
         timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
@@ -1264,16 +1265,16 @@ def savePeriodogramData():
     timeMarks = []
     markHours = []
     for tube in tubesMaster:
-        if tube[0] == setName and tube[3] == tubeNumber:
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:
             tubeToPlot = tube
-            timeMarks = tubeToPlot[8]
-            markHours = tubeToPlot[4]
+            timeMarks = tubeToPlot["timeMarks"]
+            markHours = tubeToPlot["markHours"]
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
         timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
     meanGrowthPixelsPerHour = numpy.mean(timeGaps)
     meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
-    periodData = calculatePeriodData(tubeToPlot[5], markHours, timeMarks, tubeToPlot[9], 14, 32, tubeToPlot[7])
+    periodData = calculatePeriodData(tubeToPlot["densityProfile"], markHours, timeMarks, tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"])
     periodogramXVals = []
     periodogramYVals = []
     periodogramFrequencies = []
@@ -1316,7 +1317,7 @@ def saveTubesToFile(setName):
 
     setNamesInFile = []
     for tube in tubesMaster:
-        setNamesInFile.append(tube[0])
+        setNamesInFile.append(tube["setName"])
     if setName in setNamesInFile:
         setName = setName + "_1"
     topTubeTimeMarks = []  # Blank list of time mark x values
@@ -1349,18 +1350,18 @@ def saveTubesToFile(setName):
         meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
         growthRate = round(mmPerPixelInImage * meanGrowthPixelsPerHour, 2)#mm per hour
         tubesMaster.append(
-            [
-                setName,
-                imageName,
-                imageString,
-                tube,
-                markHours,
-                densityProfile,
-                growthRate,
-                tubeRange,
-                timeMarks,
-                bandMarks,
-            ]
+            {
+                "setName":setName,
+                "imageName":imageName,
+                "imageData":imageString,
+                "tubeNumber":tube,
+                "markHours":markHours,
+                "densityProfile":densityProfile,
+                "growthRate":growthRate,
+                "tubeRange":tubeRange,
+                "timeMarks":timeMarks,
+                "bandMarks":bandMarks
+            }
         )  # Add tube info to master tubes list
     saveExperimentFile()  # Save tubes to file
     cancelImageAnalysis()  # Reset image analysis
