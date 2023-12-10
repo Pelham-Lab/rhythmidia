@@ -13,7 +13,7 @@ Rhythmidia
 ## Race Tube Images
 1. Crop your scanned race tube image as desired, leaving some background on either edge
 2. No need to make your image greyscale, fix its rotation, or increase contrast- Chonidia will take care of all of this internally!
-3. Race tube images can be .tif, .png, .jpg, .jpeg, or .svg
+3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
 ## Rhythmidia out of the Box
 1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default get race tube images and to which the program will by default save data<br />
@@ -35,11 +35,9 @@ Rhythmidia
 7. You will be directed to verify these lines:<br />
     a. To remove an incorrect line, simply click on the line<br />
     b. To add a missing line, simply click in an unoccupied position on the image<br />
-    c. If you do not like the lines at all, you can click the button labeled “Rescan” to generate new horizontal line guesses<br />
 8. When you are satisfied with the positions of all lines, click the button labeled “Proceed”
 9. Repeat steps 6-8 for time marks (red) and for bands (orange)<br />
-    a. Rescanning does not apply to these steps<br />
-10. At any time before saving tubes to file, you may click the button labeled “Cancel image analysis”
+10. At any time before saving tubes to file, you may click the button labeled “Cancel image analysis”, which will reset the image analysis process and remove your uploaded image, while leaving open any open experiment file
 11. After you are satisfied with the positions of bands and click “Proceed”, you will be able to see a preliminary calculation of the period of each tube below
 12. You will now have the option to click the button labeled “Save Tubes to File”<br />
     a.  This will bring up a popup asking for a name for the pack of tubes in the current image before it saves them to file<br />
@@ -48,7 +46,7 @@ Rhythmidia
 
 ## The Experiment Tab
 1. Whether opening an existing experiment file or working from a new pack image, granular experiment data, plots, and statistical analysis data are located on the Experiment tab
-2. Experiment data (Entry, Pack, Tube # in pack, Period calculated 3 ways) is located in the table in the top left
+2. Experiment data (Entry, Pack, Tube # in pack, Period calculated 3 ways, Growth rate) is located in the table in the top left
 3. In the top right is the frame for statistical analysis of any number of tubes:<br />
     a. Select packs, tubes, and a method of period analysis in the 3 lists<br />
     b. To select multiple packs or tubes, use control-click<br />
@@ -62,6 +60,7 @@ Rhythmidia
     d. Click the button labeled “Save Periodogram” to save a .png of the periodogram<br />
     e. Click the button labeled “Save Densitometry” to save a .csv of the densitometry data<br />
     f. Click the button labeled “Save Periodogrammetry” to save a .csv of the periodogrammetry data<br />
+5. At the bottom left is a button labeled "Display Pack Image". This button will display a popup window containing the greyscale version of the image corresponding to whichever pack is selected in the bottom left list.
 
 ## Functions Overview
 Open Experiment File      (⌘O)<br />
