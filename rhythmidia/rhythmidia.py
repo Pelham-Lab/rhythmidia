@@ -1475,7 +1475,7 @@ def helpMain():
     
     webbrowser.open(
         "https://github.com/PelhamLab", new=0, autoraise=True
-    )  # Open google in browser :p
+    )
 
 
 def invertColor(hex):
@@ -1690,10 +1690,12 @@ homeTabTopButtonRowFrame = Box(
 uploadRaceTubeImageButton = PushButton(
     homeTabTopButtonRowFrame, grid=[0, 0], text="Upload Race Tube Image", command=uploadRaceTubeImage
 )
+uploadRaceTubeImageButton.text_size = 13
 homeTabTopButtonRowSpacer1 = Box(homeTabTopButtonRowFrame, grid=[1,0], height="fill", width=5)
 rotateRaceTubeImageButton = PushButton(
     homeTabTopButtonRowFrame, grid=[2, 0], text="Rotate Image", command=rotateRaceTubeImage
 )
+rotateRaceTubeImageButton.text_size = 13
 rotateRaceTubeImageButton.disable()
 raceTubeLengthFrame = Box(homeTabTopButtonRowFrame, grid=[3, 0], border="0", height="20", layout="grid")
 raceTubeLengthLabel = Text(
@@ -1701,12 +1703,15 @@ raceTubeLengthLabel = Text(
     color="black",
     grid=[0, 0],
     text="Length from first to last\ntime mark of 1st tube (mm)",
+    size=12
 )
 raceTubeLengthTextBox = TextBox(raceTubeLengthFrame, text="300", grid=[1, 0])
+raceTubeLengthTextBox.text_size = 13
 homeTabTopButtonRowSpacer2 = Box(homeTabTopButtonRowFrame, grid=[4,0], height="fill", width=5)
 lockAndAnalyzeButton = PushButton(
     homeTabTopButtonRowFrame, grid=[5, 0], text="Lock and Analyze", command=lockAndAnalyzeRaceTubeImage
 )
+lockAndAnalyzeButton.text_size = 13
 lockAndAnalyzeButton.disable()
 homeTabVerticalSpacer2 = Box(homeTabFrame, height=5, width="fill", align="top")
 homeTabMiddleContentFrame = Box(homeTabFrame, align="top", border="0", width="fill")
@@ -1744,15 +1749,18 @@ homeTabRaceTubeImageObject = Drawing(homeTabRaceTubeImageFrame, width="fill", he
 homeTabVerticalSpacer3 = Box(homeTabFrame, height=5, width="fill", align="top")
 homeTabBottomButtonRowFrame = Box(homeTabFrame, width="fill", height=50)
 proceedButton = PushButton(homeTabBottomButtonRowFrame, text="Proceed", command=proceedHandler, align="left")
+proceedButton.text_size = 13
 proceedButton.disable()
 homeTabBottomButtonRowFrameSpacer1 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
 homeTabConsoleTextBox = TextBox(homeTabBottomButtonRowFrame, width=80, height=4, multiline=True, align="left")
 homeTabConsoleTextBox.disable()
 homeTabBottomButtonRowFrameSpacer2 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
 saveTubesToFileButton = PushButton(homeTabBottomButtonRowFrame, text="Save Tubes to File", command=saveTubesToFilePrompt, align="left")
+saveTubesToFileButton.text_size = 13
 saveTubesToFileButton.disable()
 homeTabBottomButtonRowFrameSpacer3 = Box(homeTabBottomButtonRowFrame, height="fill", width=5, align="left")
 resetRaceTubeImageAnalysisButton = PushButton(homeTabBottomButtonRowFrame, text="Cancel image analysis", command=cancelImageAnalysis, align="left")
+resetRaceTubeImageAnalysisButton.text_size = 13
 resetRaceTubeImageAnalysisButton.disable()
 homeTabPreliminaryDataAnalysisFrame = Box(homeTabFrame, width="fill", height=400, align="top")
 homeTabPreliminaryDataAnalysisTextBox = Text(homeTabPreliminaryDataAnalysisFrame, font="Courier", size=14, align="top")
@@ -1773,6 +1781,7 @@ experimentTabFrame.set_border(5, "#9fcdea")
 experimentTabTopContentRow = Box(experimentTabFrame, width="fill", height=appHeight*0.22, align="top")
 experimentTabTableFrame = Box(experimentTabTopContentRow, width=screenWidth*0.45, height=appHeight*0.22, align="left")
 experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill")
+experimentTabTableTextBox.text_size = 11
 experimentTabTableTextBox.disable()
 experimentTabTableTextBox.when_double_clicked = displaySetImagePopup
 experimentTabTableTextBox.wrap = False
@@ -1815,10 +1824,13 @@ experimentTabStatisticalAnalysisMethodList = ListBox(
 )
 experimentTabStatisticalAnalysisButtonsFrame = Box(experimentTabStatisticalAnalysisFrame, height="fill", align="right")
 experimentTabStatisticalAnalysisAnalyzeButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Analyze", width="fill", command=performStatisticalAnalysis, align="top")
+experimentTabStatisticalAnalysisAnalyzeButton.text_size = 13
 experimentTabStatisticalAnalysisExportDataButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Save\nPeriods and\nAnalysis\nData", width="fill", pady=2, command=saveStatisticalAnalysisData, align="top")
+experimentTabStatisticalAnalysisExportDataButton.text_size = 13
 experimentTabStatisticalAnalysisOutputFrame = Box(experimentTabStatisticalAnalysisFrame, width="fill", height="fill", align="right")
 experimentTabStatisticalAnalysisOutputTitle = Text(experimentTabStatisticalAnalysisOutputFrame, text="\n\nStatistical Analysis:", align="top")
 experimentTabStatisticalAnalysisOutputTextBox = TextBox(experimentTabStatisticalAnalysisOutputFrame, multiline=True, width=35, height=18, align="top")
+experimentTabStatisticalAnalysisOutputTextBox.text_size = 11
 
 experimentTabBottomContentRow = Box(experimentTabFrame, width="fill", height=screenWidth*0.2, align="top")
 experimentTabPlotTubeSelectionFrame = Box(experimentTabBottomContentRow, width=screenWidth*0.45, height="fill", align="left")
@@ -1826,6 +1838,8 @@ experimentTabPlotTubeSelectionFrame.set_border(2, "#9fcdea")
 experimentTabPlotTubeSelectionSetListFrame = Box(experimentTabPlotTubeSelectionFrame, width=150, height="fill", align="left")
 experimentTabPlotTubeSelectionSetListTitle = Text(experimentTabPlotTubeSelectionSetListFrame, text="\n\nSets:", align="top")
 experimentTabSetImagePopupButton = PushButton(experimentTabPlotTubeSelectionSetListFrame, text="Display pack image", align="bottom", width=150, height=0, command=displaySetImagePopup)
+experimentTabSetImagePopupButton.text_size = 13
+
 experimentTabPlotTubeSelectionSetList = ListBox(
     experimentTabPlotTubeSelectionSetListFrame,
     scrollbar=True,
@@ -1856,6 +1870,7 @@ experimentTabPlotTubeSelectionMethodList = ListBox(
 )
 experimentTabPlotTubeSelectionButtonsFrame = Box(experimentTabPlotTubeSelectionFrame)
 experimentTabPlotTubeSelectionCreatePlotsButton = PushButton(experimentTabPlotTubeSelectionButtonsFrame, text="Plot", command=populatePlots, width="fill")
+experimentTabPlotTubeSelectionCreatePlotsButton.text_size = 13
 experimentTabPlotTubeSelectionSaveDensitometryPlotButton = PushButton(
     experimentTabPlotTubeSelectionButtonsFrame, 
     text="Save\nDensitometry\nPlot", 
@@ -1863,6 +1878,7 @@ experimentTabPlotTubeSelectionSaveDensitometryPlotButton = PushButton(
     command=saveDensitometryPlot, 
     width="fill"
 )
+experimentTabPlotTubeSelectionSaveDensitometryPlotButton.text_size = 13
 experimentTabPlotTubeSelectionSaveDensitometryButton = PushButton(
     experimentTabPlotTubeSelectionButtonsFrame,
     text="Save\nDensitometry\nData",
@@ -1870,6 +1886,7 @@ experimentTabPlotTubeSelectionSaveDensitometryButton = PushButton(
     command=saveDensitometryData,
     width="fill",
 )
+experimentTabPlotTubeSelectionSaveDensitometryButton.text_size = 13
 experimentTabPlotTubeSelectionSavePeriodogramPlotButton = PushButton(
     experimentTabPlotTubeSelectionButtonsFrame, 
     text="Save\nPeriodogram\nPlot", 
@@ -1877,6 +1894,7 @@ experimentTabPlotTubeSelectionSavePeriodogramPlotButton = PushButton(
     command=savePeriodogramPlot, 
     width="fill"
 )
+experimentTabPlotTubeSelectionSavePeriodogramPlotButton.text_size = 13
 experimentTabPlotTubeSelectionSavePeriodogramDataButton = PushButton(
     experimentTabPlotTubeSelectionButtonsFrame,
     text="Save\nPeriodogram\nData",
@@ -1884,9 +1902,11 @@ experimentTabPlotTubeSelectionSavePeriodogramDataButton = PushButton(
     command=savePeriodogramData,
     width="fill",
 )
+experimentTabPlotTubeSelectionSavePeriodogramDataButton.text_size = 13
 experimentTabPlotFrame = Box(experimentTabBottomContentRow, width=screenWidth*0.5, height=screenWidth*0.2, align="left")
 experimentTabPlotFrame.set_border(2, "#9fcdea")
 experimentTabPlotCanvas = Canvas(experimentTabPlotFrame.tk, width=screenWidth*0.5, height=screenWidth*0.2)
 experimentTabPlotFrame.add_tk_widget(experimentTabPlotCanvas)
+
 
 openAndRun()
