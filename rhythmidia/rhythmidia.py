@@ -1621,6 +1621,7 @@ def openAndRun():
     app.display()
 
 
+
 # Create app object
 app = App(layout="auto", title="Rhythmidia (Alpha)")
 app.when_closed = sys.exit
@@ -1909,4 +1910,5 @@ experimentTabPlotCanvas = Canvas(experimentTabPlotFrame.tk, width=screenWidth*0.
 experimentTabPlotFrame.add_tk_widget(experimentTabPlotCanvas)
 
 
-openAndRun()#this just runs the gui when you run the script; this is the function to run from command line when you have the full package installed
+if __name__ == "__main__":
+    openAndRun()#this just runs the gui when you run the script; this is the function to run from command line when you have the full package installed
