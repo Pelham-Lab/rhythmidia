@@ -1909,4 +1909,4 @@ experimentTabPlotCanvas = Canvas(experimentTabPlotFrame.tk, width=screenWidth*0.
 experimentTabPlotFrame.add_tk_widget(experimentTabPlotCanvas)
 
 
-openAndRun()
+openAndRun()#this just runs the gui when you run the script; this is the function to run from command line when you have the full package installed
