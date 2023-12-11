@@ -27,7 +27,8 @@ dependencies = [
     "scipy",
     "pyautogui",
     "scikit-image",
-    "guizero"
+    "guizero",
+    "pytest"
 ]
 
 # Update the urls once the hosting is set up.
