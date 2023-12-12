@@ -158,6 +158,8 @@ def openExperimentFile(reopen=False):  # Open an experiment file
         populateExperimentDataTable(tubesMaster)  # Populate experiment data table
         populateStatisticalAnalysisLists()  # Populate statistical analysis frame
         populatePlotTubeSelectionLists()  # Populate plot data frame
+        
+        return tubesMaster
 
 
 def saveExperimentFile():  # Save current experiment
@@ -1403,10 +1405,11 @@ def proceedHandler():
             saveTubesToFileButton.enable()  # Enable save tubes button
 
 
-def keyBindHandler(keys):  # Shift, Command, S, O, P, D, H
+def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H
     """Handle uses of multikey hotkeys to perform program functions"""
     global keyPresses
 
+    print(str(keys))
     match keys:  # Based on list of pressed keys
         case [0, 1, 1, 0, 0, 0, 0]:  # If command, s pressed
             saveExperimentFile()  # Save experiment
@@ -1435,7 +1438,9 @@ def keyPress(keyPressed):
     match [str(keyPressed.key), str(keyPressed.keycode)]:  # Based on key and keycode of key pressed
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 1
-        case ["", "922810622"]:  # Command
+        case ["", "922810622"]:  # Command 
+            keyPresses[1] = 1
+        case ["", "989919486"]:  # Control 
             keyPresses[1] = 1
         case ["s", "16777331"] | ["S", "20971603"]:  # S
             keyPresses[2] = 1
@@ -1457,6 +1462,8 @@ def keyRelease(keyReleased):
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 0
         case ["", "922810622"]:  # Command
+            keyPresses[1] = 0
+        case ["", "989919486"]:  # Control
             keyPresses[1] = 0
         case ["s", "16777331"] | ["S", "20971603"]:  # S
             keyPresses[2] = 0
