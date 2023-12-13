@@ -12,6 +12,7 @@ import numpy
 import csv
 import os
 import sys
+import copy
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 from scipy.signal import lombscargle
@@ -155,10 +156,10 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 bandMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
             parsedTube["bandMarks"] = bandMarks
             tubesMaster.append(parsedTube)  # Add parsed tube data to master list of tubes
-        populateExperimentDataTable(tubesMaster)  # Populate experiment data table
+        populateExperimentDataTable()  # Populate experiment data table
         populateStatisticalAnalysisLists()  # Populate statistical analysis frame
         populatePlotTubeSelectionLists()  # Populate plot data frame
-        
+
         return tubesMaster
 
 
@@ -309,6 +310,9 @@ def cancelImageAnalysis():
     raceTubeLengthTextBox.enable()  # Enable race tube length text box
     lockAndAnalyzeButton.disable()  # Disable lock and analyze button
     proceedButton.disable()  # Disable proceed button
+
+    experimentTabTableParamsHrsLowTextBox.value = ""
+    experimentTabTableParamsHrsHighTextBox.value = ""    
 
 
 def updatePreliminaryDataDisplay():
@@ -570,7 +574,7 @@ def identifyBanding():
         densityProfile = generateDensityProfile(editedImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
         densityProfileOriginal = generateDensityProfile(originalImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5))  # Create density profile of current tube
         densityProfiles.append(densityProfileOriginal)  # Add to global density profile list
-        densityProfileNoTimeMarks = densityProfile  # Remove dips due to time marks from density data
+        densityProfileNoTimeMarks = copy.deepcopy(densityProfile)  # Remove dips due to time marks from density data
         for line in timeMarkLines:  # For each time mark (make densityProfileNoTimeMarks)
             if line[2] == tubeNumber:  # If time mark is in current tube
                 windowRadius = 10  # Set radius of time mark deletion window
@@ -582,7 +586,7 @@ def identifyBanding():
                     highX = 1160
                 yIncrement = (densityProfile[highX] - densityProfile[lowX]) / (2*windowRadius+1)  # Set y increment of interpolation
                 xIncrement = 0  # Set x increment of interpolation
-                for xWalk in range(line[0] - windowRadius, line[0] + windowRadius):  # For x value in interp window
+                for xWalk in range(lowX, highX):  # For x value in interp window
                     if xWalk < len(densityProfileNoTimeMarks) - 1 and xWalk > 0:  # If x is within image
                         densityProfileNoTimeMarks[xWalk] = densityProfile[lowX] + yIncrement * xIncrement  # Interpolate density
                     xIncrement += 1  # Increase x increment of interpolation
@@ -722,7 +726,7 @@ def saveTubesToFilePrompt():
 
 def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeriod, maxPeriod, tubeRange):
     """Calculate periods of a given tube's densitometry profile"""
-    slopeCoeff = abs(1 / numpy.cos(numpy.arctan(((tubeRange[-1][1] + tubeRange[-1][0]) / 2- (tubeRange[0][1] + tubeRange[0][0]) / 2) / (1160))))  # Calculate coefficient to correct for slope
+    slopeCoeff = abs(1 / numpy.cos(numpy.arctan(((tubeRange[-1][1] + tubeRange[-1][0]) / 2- (tubeRange[0][1] + tubeRange[0][0]) / 2) / len(tubeRange))))  # Calculate coefficient to correct for slope
     # Calculate 'manual' period
     growthRates = []  # List of time gaps in pixels per hour
     for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
@@ -736,14 +740,35 @@ def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeri
     # Calculate high and low periods in pixels
     minPeriodPixels = int(minPeriod * meanGrowthPixelsPerHour)  # Lowest period to test (in pixels)
     maxPeriodPixels = int(maxPeriod * meanGrowthPixelsPerHour)  # Highest period to test (in pixels)
+    
+    
+    densityProfileNoTimeMarks = copy.deepcopy(densityProfile)  # Remove dips due to time marks from density data
+    
+    for line in timeMarks:  # For each time mark (make densityProfileNoTimeMarks)
+        windowRadius = 10  # Set radius of time mark deletion window
+        lowX = line - windowRadius  # Leftmost bound of deletion window
+        highX = line + windowRadius  # Rightmost bound of deletion window
+        if lowX < 0:
+            lowX = 0
+        if highX > len(densityProfileNoTimeMarks)-1:
+            highX = len(densityProfileNoTimeMarks)-1
+        yIncrement = (densityProfileNoTimeMarks[highX] - densityProfileNoTimeMarks[lowX]) / (2*windowRadius+1)  # Set y increment of interpolation
+        xIncrement = 0  # Set x increment of interpolation
+        for xWalk in range(lowX, highX):  # For x value in interp window
+            if xWalk < len(densityProfileNoTimeMarks) - 1 and xWalk > 0:  # If x is within image
+                densityProfileNoTimeMarks[xWalk] = densityProfileNoTimeMarks[lowX] + yIncrement * xIncrement  # Interpolate density
+            xIncrement += 1  # Increase x increment of interpolation
+    
+    
+    
     # Calculate Sokolove-Bushell periodogram
-    frequenciesSokoloveBushell, periodogramPowerSpectrumSokoloveBushell = periodogram(densityProfile, scaling="spectrum")  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
+    frequenciesSokoloveBushell, periodogramPowerSpectrumSokoloveBushell = periodogram(densityProfileNoTimeMarks, scaling="spectrum")  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
     frequenciesSokoloveBushell = frequenciesSokoloveBushell.tolist()[1:]  # Convert S-B frequencies to list
     periodogramPowerSpectrumSokoloveBushell = periodogramPowerSpectrumSokoloveBushell.tolist()[1:]  # Convert S-B periodogram values to list
     # Calculate Lomb-Scargle Periodogram
     frequencyInterval = int(((2 * numpy.pi) / minPeriodPixels - (2 * numpy.pi) / maxPeriodPixels) / 0.0001)  # Number of angular frequencies to test for Lomb-Scargle at an interval of 0.0001
     frequenciesLombScargle = (numpy.linspace((2 * numpy.pi) / maxPeriodPixels, (2 * numpy.pi) / minPeriodPixels, frequencyInterval).tolist())  # Create list of angular frequencies to test for Lomb-Scargle periodogram
-    periodogramChiSquaredLombScargle = lombscargle(list(range(0, 1160)), densityProfile, frequenciesLombScargle)  # Get Lomb-Scargle periodogram
+    periodogramChiSquaredLombScargle = lombscargle(list(range(0, len(densityProfileNoTimeMarks))), densityProfileNoTimeMarks, frequenciesLombScargle)  # Get Lomb-Scargle periodogram
     periodogramChiSquaredLombScargle = periodogramChiSquaredLombScargle.tolist()  # Convert L-S periodogram values to list
     # Convert frequencies to periods
     periodLombScarglePixels = ((2 * numpy.pi) / frequenciesLombScargle[periodogramChiSquaredLombScargle.index(numpy.max(periodogramChiSquaredLombScargle))])  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
@@ -764,9 +789,13 @@ def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeri
     )
 
 
-def populateExperimentDataTable(tubesMaster):
+def populateExperimentDataTable():
     """Populate experiment data table."""
+    global tubesMaster
     global experimentTabTableTextBox
+    global experimentTabTableParamsHrsLowTextBox
+    global experimentTabTableParamsHrsHighTextBox
+
     tableRows = [
         [
             "Entry",
@@ -781,7 +810,51 @@ def populateExperimentDataTable(tubesMaster):
     ]  # Populate table rows with headers and a blank row
     maxColumnLengths = [6, 5, 7, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
     for tube in tubesMaster:  # For each tube in master tube list
-        tubePeriods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])  # Calculate periods and periodograms for current tube
+        timeMarks = tube["timeMarks"]
+        markHours = tube["markHours"]
+        densitometryXValsRaw = list(range(0, 1160))
+        timeGaps = []
+        for mark in range(0, len(timeMarks) - 1):
+            timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))#gaps in px/hr
+        meanGrowthPixelsPerHour = numpy.mean(timeGaps)
+        meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
+        densitometryXValsHours = []
+        for xPixel in densitometryXValsRaw:
+            densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+        if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":
+            hoursStartCalculationWindow = densitometryXValsHours[0]
+            hoursEndCalculationWindow = densitometryXValsHours[-1]
+            experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)
+            experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)
+        else:
+            hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+            hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+        if hoursStartCalculationWindow <= float(experimentTabTableParamsHrsLowTextBox.value):
+            hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+        if hoursEndCalculationWindow >= float(experimentTabTableParamsHrsHighTextBox.value):
+            hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+        hoursStartCalculationWindowIndex = None
+        hoursEndCalculationWindowIndex = None
+        for index, hours in enumerate(densitometryXValsHours):
+            if hoursStartCalculationWindowIndex is None and hoursStartCalculationWindow <= hours:
+                hoursStartCalculationWindowIndex = index
+            if hoursEndCalculationWindowIndex is None and hoursEndCalculationWindow <= hours:
+                hoursEndCalculationWindowIndex = index
+        if hoursEndCalculationWindowIndex is None:
+            hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1
+        windowOfDensityProfile = tube["densityProfile"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+        windowOfTubeRange = tube["tubeRange"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+        windowOfMarkHours = []
+        windowOfTimeMarks = []
+        windowOfBandMarks = []
+        for index, value in enumerate(tube["timeMarks"]):
+            if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+                windowOfTimeMarks.append(value-hoursStartCalculationWindowIndex)
+                windowOfMarkHours.append(tube["markHours"][index])
+        for value in tube["bandMarks"]: 
+            if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+                windowOfBandMarks.append(value-hoursStartCalculationWindowIndex)
+        tubePeriods = calculatePeriodData(windowOfDensityProfile, windowOfMarkHours, windowOfTimeMarks, windowOfBandMarks, 14, 32, windowOfTubeRange)  # Calculate periods and periodograms for current tube
         tableRows.append(
             [
                 str(tubesMaster.index(tube) + 1),
@@ -867,6 +940,8 @@ def performStatisticalAnalysis():
     global experimentTabStatisticalAnalysisTubeList
     global experimentTabStatisticalAnalysisMethodList
     global experimentTabStatisticalAnalysisOutputTextBox
+    global experimentTabTableParamsHrsLowTextBox
+    global experimentTabTableParamsHrsHighTextBox
 
     tubesSelected = experimentTabStatisticalAnalysisTubeList.value  # Set list of selected tubes from options list
     method = None  # Initialize method
@@ -879,8 +954,52 @@ def performStatisticalAnalysis():
             method = 2  # Set method to 2
     selectedPeriods = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
+        timeMarks = tube["timeMarks"]
+        markHours = tube["markHours"]
+        densitometryXValsRaw = list(range(0, 1160))
+        timeGaps = []
+        for mark in range(0, len(timeMarks) - 1):
+            timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))#gaps in px/hr
+        meanGrowthPixelsPerHour = numpy.mean(timeGaps)
+        meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
+        densitometryXValsHours = []
+        for xPixel in densitometryXValsRaw:
+            densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+        if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":
+            hoursStartCalculationWindow = densitometryXValsHours[0]
+            hoursEndCalculationWindow = densitometryXValsHours[-1]
+            experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)
+            experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)
+        else:
+            hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+            hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+        if hoursStartCalculationWindow <= float(experimentTabTableParamsHrsLowTextBox.value):
+            hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+        if hoursEndCalculationWindow >= float(experimentTabTableParamsHrsHighTextBox.value):
+            hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+        hoursStartCalculationWindowIndex = None
+        hoursEndCalculationWindowIndex = None
+        for index, hours in enumerate(densitometryXValsHours):
+            if hoursStartCalculationWindowIndex is None and hoursStartCalculationWindow <= hours:
+                hoursStartCalculationWindowIndex = index
+            if hoursEndCalculationWindowIndex is None and hoursEndCalculationWindow <= hours:
+                hoursEndCalculationWindowIndex = index
+        if hoursEndCalculationWindowIndex is None:
+            hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1
+        windowOfDensityProfile = tube["densityProfile"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+        windowOfTubeRange = tube["tubeRange"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+        windowOfMarkHours = []
+        windowOfTimeMarks = []
+        windowOfBandMarks = []
+        for index, value in enumerate(tube["timeMarks"]):
+            if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+                windowOfTimeMarks.append(value-hoursStartCalculationWindowIndex)
+                windowOfMarkHours.append(tube["markHours"][index])
+        for value in tube["bandMarks"]: 
+            if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+                windowOfBandMarks.append(value-hoursStartCalculationWindowIndex)
         if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            selectedPeriods.append(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[method])  # Add selected period to list of periods for analysis
+            selectedPeriods.append(calculatePeriodData(windowOfDensityProfile, windowOfMarkHours, windowOfTimeMarks, windowOfBandMarks, 14, 32, windowOfTubeRange)[method])  # Add selected period to list of periods for analysis
     meanPeriod = numpy.mean(selectedPeriods)  # Calculate mean of selected periods
     standardDeviation = numpy.std(selectedPeriods)  # Calculate standard deviation of selected periods
     standardErrorOfMeans = standardDeviation / numpy.sqrt(len(selectedPeriods))  # Calculate standard error of selected periods
@@ -917,6 +1036,8 @@ def populatePlots():
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = 6  # Set method to 6
     tubesSelected = experimentTabPlotTubeSelectionTubeList.value
+
+
     tubeToPlot = []
     timeMarks = []
     markHours = []
@@ -925,6 +1046,8 @@ def populatePlots():
             tubeToPlot = tube
     timeMarks = tubeToPlot["timeMarks"]
     markHours = tubeToPlot["markHours"]
+    bandMarks = tubeToPlot["bandMarks"]
+
     densitometryXValsRaw = list(range(0, 1160))
     timeGaps = []
     for mark in range(0, len(timeMarks) - 1):
@@ -934,15 +1057,63 @@ def populatePlots():
     densitometryXValsHours = []
     for xPixel in densitometryXValsRaw:
         densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
+    if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":
+        hoursStartCalculationWindow = densitometryXValsHours[0]
+        hoursEndCalculationWindow = densitometryXValsHours[-1]
+        experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)
+        experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)
+    else:
+        hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+        hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+    if hoursStartCalculationWindow <= float(experimentTabTableParamsHrsLowTextBox.value):
+        hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
+    if hoursEndCalculationWindow >= float(experimentTabTableParamsHrsHighTextBox.value):
+        hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
+    hoursStartCalculationWindowIndex = None
+    hoursEndCalculationWindowIndex = None
+    for index, hours in enumerate(densitometryXValsHours):
+        if hoursStartCalculationWindowIndex is None and hoursStartCalculationWindow <= hours:
+            hoursStartCalculationWindowIndex = index
+        if hoursEndCalculationWindowIndex is None and hoursEndCalculationWindow <= hours:
+            hoursEndCalculationWindowIndex = index
+    if hoursEndCalculationWindowIndex is None:
+        hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1
+    windowOfDensityProfile = tubeToPlot["densityProfile"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+    windowOfTubeRange = tubeToPlot["tubeRange"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
+    windowOfMarkHours = []
+    windowOfTimeMarks = []
+    windowOfBandMarks = []
+    windowOfDensitometryXValsHours = densitometryXValsHours[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
     timeMarksHours = []
-    for xPixel in tubeToPlot["timeMarks"]:
+    windowOfTimeMarksHours = []
+    for xPixel in timeMarks:
         timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
     bandMarksHours = []
-    for xPixel in tubeToPlot["bandMarks"]:
+    windowOfBandMarksHours = []
+    for xPixel in bandMarks:
         bandMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
-    densitometryYVals = tubeToPlot["densityProfile"]
+    densitometryYVals = windowOfDensityProfile
+    for index, value in enumerate(timeMarks):
+        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+            windowOfTimeMarks.append(value-hoursStartCalculationWindowIndex)
+            windowOfMarkHours.append(markHours[index])
+            windowOfTimeMarksHours.append(timeMarksHours[index])
+    for index, value in enumerate(bandMarks): 
+        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
+            windowOfBandMarks.append(value-hoursStartCalculationWindowIndex)
+            windowOfBandMarksHours.append(bandMarksHours[index])
+    
+
+
+
+
+
+    
+
+    
+    
     #Create period plot data
-    periodData = calculatePeriodData(tubeToPlot["densityProfile"], markHours, timeMarks, tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"])
+    periodData = calculatePeriodData(windowOfDensityProfile, windowOfMarkHours, windowOfTimeMarks, windowOfBandMarks, 14, 32, windowOfTubeRange)
     periodogramXVals = []
     periodogramYVals = []
     calculatedPeriodogramFrequencies = periodData[method-1]
@@ -968,8 +1139,8 @@ def populatePlots():
     densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
     densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
     periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData[7], periodData[8] + 1)))
-    plotsInfo = [densitometryXValsHours, densitometryYVals, timeMarksHours, bandMarksHours, periodogramXVals, periodogramYVals, periodogramXAxisLabels]
-    tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
+    plotsInfo = [windowOfDensitometryXValsHours, densitometryYVals, timeMarksHours, bandMarksHours, periodogramXVals, periodogramYVals, periodogramXAxisLabels]
+    tubeDoubleFigurePlots[0].plot(windowOfDensitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
     tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)
     tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)
     tubeDoubleFigurePlots[0].xaxis.set_minor_locator(densitometryXAxisMinorLabels)
@@ -979,14 +1150,14 @@ def populatePlots():
         title="Densitogram"
     )
     tubeDoubleFigurePlots[0].vlines(
-        timeMarksHours,
+        windowOfTimeMarksHours,
         numpy.min(densitometryYVals),
         numpy.max(densitometryYVals),
         colors=appParameters["colorVert"],
         label="Time Marks",
     )
     tubeDoubleFigurePlots[0].vlines(
-        bandMarksHours, 
+        windowOfBandMarksHours, 
         numpy.min(densitometryYVals), 
         numpy.max(densitometryYVals), 
         colors=appParameters["colorBand"], 
@@ -1367,7 +1538,7 @@ def saveTubesToFile(setName):
         )  # Add tube info to master tubes list
     saveExperimentFile()  # Save tubes to file
     cancelImageAnalysis()  # Reset image analysis
-    populateExperimentDataTable(tubesMaster)  # Populate experiment data table
+    populateExperimentDataTable()  # Populate experiment data table
 
 
 def proceedHandler():
@@ -1409,7 +1580,6 @@ def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H
     """Handle uses of multikey hotkeys to perform program functions"""
     global keyPresses
 
-    print(str(keys))
     match keys:  # Based on list of pressed keys
         case [0, 1, 1, 0, 0, 0, 0]:  # If command, s pressed
             saveExperimentFile()  # Save experiment
@@ -1458,6 +1628,7 @@ def keyPress(keyPressed):
 def keyRelease(keyReleased):
     """Handle each key release registered by app object."""
     global keyPresses
+
     match [str(keyReleased.key), str(keyReleased.keycode)]:  # Based on key and keycode of key released
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 0
@@ -1570,22 +1741,15 @@ def displaySetImagePopup():
     #global experimentTabTableTextBox
     global experimentTabPlotTubeSelectionSetList
 
-    #fontSizePt = experimentTabTableTextBox.text_size
-    #fontSizeMap = {7:9, 8:11, 9:12, 10:13, 11:14, 12:16, 13:17, 14:19, 15:20}
-    #fontHeightPx = fontSizeMap[fontSizePt]
-    #fontHeightPx = 4*fontSizePt/3+1
-    #textBoxLine = clickData.y/fontHeightPx
-    #print(textBoxLine)
-    #print(clickData.y)
-    
     tubeNumber = -1
-    for tube in enumerate(tubesMaster):
-        if tube[1][0]:
-            tubeNumber = tube[0]
+    for tube in tubesMaster:
+        if tube["setName"] == experimentTabPlotTubeSelectionSetList.value:
+            tubeNumber = tube["tubeNumber"]
+            
     #tubeNumber = 3
-    setName = tubesMaster[tubeNumber][0]
-    imageName = tubesMaster[tubeNumber][1]
-    imageData = tubesMaster[tubeNumber][2]
+    setName = tubesMaster[tubeNumber]["setName"]
+    imageName = tubesMaster[tubeNumber]["imageName"]
+    imageData = tubesMaster[tubeNumber]["imageData"]
     imageArray = numpy.array(imageData).astype(numpy.uint8)
     imageConverted = Image.fromarray(imageArray).convert('RGB')
     imageThumbnailWindow = Window(app, title="Pack Image: "+setName+" ("+imageName+")", width=1160, height=400)
@@ -1788,10 +1952,20 @@ experimentTabFrame.text_color = "black"
 experimentTabFrame.set_border(5, "#9fcdea")
 experimentTabTopContentRow = Box(experimentTabFrame, width="fill", height=appHeight*0.22, align="top")
 experimentTabTableFrame = Box(experimentTabTopContentRow, width=screenWidth*0.45, height=appHeight*0.22, align="left")
-experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill")
+experimentTabTableFrameVerticalSpacer1 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
+experimentTabTableParamsRow = Box(experimentTabTableFrame, width="fill", height=40, align="bottom")
+experimentTabTableParamsHrsLowText = Text(experimentTabTableParamsRow, text="Hours (Start): ", align="left")
+experimentTabTableParamsHrsLowTextBox = TextBox(experimentTabTableParamsRow, width=4, align="left")
+experimentTabTableParamsHrsHighText = Text(experimentTabTableParamsRow, text="Hours (Stop): ", align="left")
+experimentTabTableParamsHrsHighTextBox = TextBox(experimentTabTableParamsRow, width=4, align="left")
+experimentTabTableParamsRowSpacer = Box(experimentTabTableParamsRow, height="fill", width=5, align="left")
+experimentTabTableParamsRecalcButton = PushButton(experimentTabTableParamsRow, text="Recalculate Periods", align="left", command=populateExperimentDataTable)
+experimentTabTableFrameVerticalSpacer2 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
+
+
+experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill", align="top")
 experimentTabTableTextBox.text_size = 11
 experimentTabTableTextBox.disable()
-experimentTabTableTextBox.when_double_clicked = displaySetImagePopup
 experimentTabTableTextBox.wrap = False
 experimentTabTableTextBox.font = "Courier"
 experimentTabTableFrame.set_border(2, "#9fcdea")
