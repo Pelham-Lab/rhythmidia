@@ -713,6 +713,7 @@ def getTimeMarkTableData():
             case 2:  # If in third column
                 numberOfHours += (int(datum.value) / 60)  # Add to hours number of minutes in row / 60
                 markHours.append(numberOfHours)  # Add number of hours to markHours
+    
 
 
 def saveTubesToFilePrompt():
@@ -811,7 +812,7 @@ def populateExperimentDataTable():
     maxColumnLengths = [6, 5, 7, 16, 26, 22, 19]  # Set maximum lengths of columns for spacing
     for tube in tubesMaster:  # For each tube in master tube list
         timeMarks = tube["timeMarks"]
-        markHours = tube["markHours"]
+        markHours = tube["markHours"][:len(timeMarks)]
         densitometryXValsRaw = list(range(0, 1160))
         timeGaps = []
         for mark in range(0, len(timeMarks) - 1):
@@ -822,8 +823,16 @@ def populateExperimentDataTable():
         for xPixel in densitometryXValsRaw:
             densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
         if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":
-            hoursStartCalculationWindow = densitometryXValsHours[0]
-            hoursEndCalculationWindow = densitometryXValsHours[-1]
+            minimalStartWindowHours = 0
+            maximalEndWindowHours = markHours[-1]-12
+            if densitometryXValsHours[0] >= minimalStartWindowHours:
+                hoursStartCalculationWindow = densitometryXValsHours[0]
+            else:
+                hoursStartCalculationWindow = minimalStartWindowHours
+            if densitometryXValsHours[-1] <= maximalEndWindowHours:
+                hoursEndCalculationWindow = densitometryXValsHours[-1]
+            else:
+                hoursEndCalculationWindow = maximalEndWindowHours
             experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)
             experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)
         else:
