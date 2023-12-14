@@ -78,7 +78,7 @@ def updateAppParameters():
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
 
 
-def openExperimentFile(reopen=False):  # Open an experiment file
+def openExperimentFile(reopen=False):
     """Open an existing experiment file containing data from past images/tubes. Populate appropriate variables, including tubesMaster, with relevant information."""
     global openFile
     global workingDir
@@ -98,21 +98,22 @@ def openExperimentFile(reopen=False):  # Open an experiment file
     if openFile == "":  # If openFile remains blank after this (because user canceled popup)
         return  # Abort function
     with open(openFile, newline="") as experimentFile:  # Open user-specified txt experiment file
-        tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %
-        for tube in tubesInFile:  # For each line of experiment file
-            parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank variable for parsed tube
-            parsedTube["setName"] = str(tube[0])
-            parsedTube["imageName"] = str(tube[1])
-            imageData = []  # Blank image data variable
-            imageDataRaw = tube[2][1:-1].split("],[")  # Image data from file as list
+        tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %; generates iterable of all race tube datasets in specified experiment file
+        for tube in tubesInFile:  # For each line of experiment file (each containing one race tube's data)
+            #Assemble race tube data dictionary for a tube's data in the file
+            parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank dictionary for parsed tube containing all requisite keys
+            parsedTube["setName"] = str(tube[0]) # Set name (or pack name) string is first element of line
+            parsedTube["imageName"] = str(tube[1]) # Image name string is second element of line
+            imageData = []  # Blank image data list; each element is a row
+            imageDataRaw = tube[2][1:-1].split("],[")  # Image data from file as list of lists (each sublist is a row)
             for row in imageDataRaw:  # For each row of image data
-                dataRow = []  # Blank variable for row values
+                dataRow = []  # Blank list for row values
                 for pixel in (row.strip().replace("[", "").replace("]", "").split(",")):  # For each value in row, excluding punctuation and delimited by ","
                     if pixel != "":  # If value is not blank
-                        dataRow.append(int(pixel))  # Convert value to integer and add to row data
-                imageData.append(dataRow)  # Add row data to image data
-            parsedTube["imageData"] = imageData
-            parsedTube["tubeNumber"] = int(tube[3])
+                        dataRow.append(int(pixel))  # Convert value to integer and add to row data list
+                imageData.append(dataRow)  # Add row data to image data list
+            parsedTube["imageData"] = imageData # Set image data of parsed tube to image data list
+            parsedTube["tubeNumber"] = int(tube[3]) # Set tube number to fourth element of line from file
             markHours = (
                 tube[4]
                 .strip()
@@ -120,9 +121,9 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 .replace("[", "")
                 .replace("]", "")
                 .split(",")
-            )  # Raw list of mark hour values
-            for hours in enumerate(markHours):  # For each element of raw mark hours data
-                markHours[hours[0]] = float(hours[1])  # Convert value to float from string
+            )  # Raw list of mark hour values, with punctuation removed, delimited by ","
+            for index, hours in enumerate(markHours):  # For each element of raw mark hours data
+                markHours[index] = float(hours)  # Convert value to float from string
             parsedTube["markHours"] = markHours
             densityProfile = (
                 tube[5]
@@ -134,16 +135,16 @@ def openExperimentFile(reopen=False):  # Open an experiment file
             )  # Raw list of densitometry values
             for num in enumerate(densityProfile):  # For each element of raw densitometry data
                 densityProfile[num[0]] = float(num[1])  # Convert value to float from string
-            parsedTube["densityProfile"] = densityProfile
-            parsedTube["growthRate"] = float(tube[6])
-            tubeBoundsRaw = (tube[7][1:-1].replace(" ", "").split("],["))  # Raw list of tube boundary doubles
-            pairs = []  # Blank list of tube boundary doubles
+            parsedTube["densityProfile"] = densityProfile # Set race tube density profile to parsed density profile data
+            parsedTube["growthRate"] = float(tube[6]) # Set growth rate to seventh element of line
+            tubeBoundsRaw = (tube[7][1:-1].replace(" ", "").split("],["))  # Raw list of tube boundary doubles, from eighth element of line with punctuation removed, delimeted by ","
+            pairs = []  # Blank list for tube boundary doubles
             for pairRaw in tubeBoundsRaw:  # For each double in raw list of tube boundary doubles
-                pair = pairRaw.replace("[", "").replace("]", "").split(",")  # Remove [, ], and split at commas into list
-                for yVal in enumerate(pair):  # For each number in boundary double
-                    pair[yVal[0]] = float(yVal[1])  # Convert number to float from string
+                pair = pairRaw.replace("[", "").replace("]", "").split(",")  # Remove punctuation and split at "," into list
+                for index, yVal in enumerate(pair):  # For each number in boundary double
+                    pair[index] = float(yVal)  # Convert number to float from string
                 pairs.append(pair)  # Add boundary double to list of tube boundary doubles
-            parsedTube["tubeRange"] = pairs
+            parsedTube["tubeRange"] = pairs # Add list of boundary doubles to race tube data dictionary
             timeMarks = (
                 tube[8]
                 .strip()
@@ -151,10 +152,10 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 .replace("[", "")
                 .replace("]", "")
                 .split(",")
-            )  # Raw list of time mark x positions
-            for xVal in enumerate(timeMarks):  # For each element of raw time marks data
-                timeMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
-            parsedTube["timeMarks"] = timeMarks
+            )  # Raw list of time mark x positions from ninth element of line, with punctuation removed, delimited by ","
+            for index, xVal in enumerate(timeMarks):  # For each element of raw time marks data
+                timeMarks[index] = int(xVal)  # Convert value to int from string
+            parsedTube["timeMarks"] = timeMarks # Add time marks to race tube data dictionary
             bandMarks = (
                 tube[9]
                 .strip()
@@ -162,34 +163,34 @@ def openExperimentFile(reopen=False):  # Open an experiment file
                 .replace("[", "")
                 .replace("]", "")
                 .split(",")
-            )  # Raw list of band marks positions
-            for xVal in enumerate(bandMarks):  # For each element of raw band marks data
-                bandMarks[xVal[0]] = int(xVal[1])  # Convert value to int from string
-            parsedTube["bandMarks"] = bandMarks
-            tubesMaster.append(parsedTube)  # Add parsed tube data to master list of tubes
+            )  # Raw list of band marks positions from tenth element of line, with punctuation removed, delimited by ","
+            for index, xVal in enumerate(bandMarks):  # For each element of raw band marks data
+                bandMarks[index] = int(xVal)  # Convert value to int from string
+            parsedTube["bandMarks"] = bandMarks # Add band marks to race tube data dictionary
+            tubesMaster.append(parsedTube)  # Add parsed race tube data dictionary to global master list of tubes
         populateExperimentDataTable()  # Populate experiment data table
-        populateStatisticalAnalysisLists()  # Populate statistical analysis frame
-        populatePlotTubeSelectionLists()  # Populate plot data frame
+        populateStatisticalAnalysisLists()  # Populate statistical analysis frame lists
+        populatePlotTubeSelectionLists()  # Populate plot data frame lists
 
 
-def saveExperimentFile():  # Save current experiment
+def saveExperimentFile():
     """Save experiment file to existing file, or prompt user to save as new file if not editing existing experiment file."""
     global openFile
     global workingDir
     global tubesMaster
 
-    if openFile == "":  # If no currently open file
+    if openFile == "":  # If no file is currently opened in Rhythmidia
         saveExperimentFileAs("")  # Prompt user to save as new file
     else:  # If a file is already open
         with open(openFile, newline="", mode="w") as experimentFile:  # Open current experiment file
-            writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer
-            for tube in tubesMaster:  # For each tube in master tube list
-                tubeValuesList = list(tube.values())
+            writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer variable with % delimiter
+            for tube in tubesMaster:  # For each race tube data dictionary in global master tube list
+                tubeValuesList = list(tube.values())  # Convert data dictionary
                 writer.writerow(tubeValuesList)  # Write new line for tube to experiment file
         openExperimentFile(True)  # Open current experiment again to update application
 
 
-def saveExperimentFileAs(name=""):  # Save current experiment as new experiment file
+def saveExperimentFileAs(name=""):
     """Prompt user to provide a file name to save current data as a new experiment file."""
     global openFile
     global workingDir
@@ -200,25 +201,29 @@ def saveExperimentFileAs(name=""):  # Save current experiment as new experiment 
         filetypes=[["Rhythmidia Experiment", "*.rmex"]],
         save=True,
         filename=name,
-    )  # Prompt user to create a new file name with popup, and save name as openFile
+    )  # Prompt user to create a new file name with file selection popup, and save name as openFile
     if not (openFile == ""):  # If file name is not left blank
         saveExperimentFile()  # Save experiment as chosen file name
 
 
-def selectHomeTab():  # Swap to home tab
+def selectHomeTab():
     """Select home tab."""
+
     if homeTabFrame.visible is False:  # If home tab is not already selected
         experimentTabFrame.hide()  # Hide experiment tab
         homeTabFrame.show()  # Show home tab
     app.update()  # Update app object
+    homeTabFrame.focus()
 
 
-def selectExperTab():  # Swap to experiments tab
+def selectExperTab():
     """Select experiment tab."""
+
     if experimentTabFrame.visible is False:  # If experiment tab not already selected
         homeTabFrame.hide()  # Hide home tab
         experimentTabFrame.show()  # Show experiment tab
     app.update()  # Update app object
+    experimentTabFrame.focus()
 
 
 def uploadRaceTubeImage():  # Prompt file upload of race tube image
@@ -753,7 +758,6 @@ def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeri
     
     
     densityProfileNoTimeMarks = copy.deepcopy(densityProfile)  # Remove dips due to time marks from density data
-    
     for line in timeMarks:  # For each time mark (make densityProfileNoTimeMarks)
         windowRadius = 10  # Set radius of time mark deletion window
         lowX = line - windowRadius  # Leftmost bound of deletion window
@@ -1511,6 +1515,7 @@ def saveTubesToFile(setName):
         setNamesInFile.append(tube["setName"])
     if setName in setNamesInFile:
         setName = setName + "_1"
+    setName.replace("%", "")
     topTubeTimeMarks = []  # Blank list of time mark x values
     for line in timeMarkLines:  # For each line in list of time marks
         if line[2] == 0:  # If line is in current tube
@@ -1796,16 +1801,6 @@ def setupTasksOnOpenAndRun():  # Tasks to run on opening app
 
 
 def openAndRun():
-    """
-    Colors
-    Bright orange: #F29F05
-    Bright blue: #69C5FF
-    Accent dark: #676975
-    Dull orange: #deb15e
-    Dull blue: #9fcdea
-    Light grey: grey95
-    Rhythmidia logo red orange: #e05b4c or #eab47c
-    """
     setupTasksOnOpenAndRun()
     app.display()
 
