@@ -19,11 +19,17 @@ from scipy.signal import lombscargle
 from scipy.signal import periodogram
 import webbrowser
 
-screenWidth = pyautogui.size().width  # Get screen width
-screenHeight = pyautogui.size().height  # Get screen height
+
+#Set initial screen height and width to monitor dimensions
+screenWidth = pyautogui.size().width
+screenHeight = pyautogui.size().height
+##Set numpy print maximum size to largest value system can handle
 numpy.set_printoptions(threshold=sys.maxsize)
+#Set csv field maximum size to largest value 32-bit systems can handle
 csv.field_size_limit(999999999)
 
+
+#Assign global variable initial values
 appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue"}  # Dictionary of settings
 openFile = ""  # Name of open experiment file
 workingDir = ""  # Name of working directory
@@ -34,7 +40,7 @@ rotateDeg = 0  # Degree of rotation of finalized image compared to raw
 markHours = []  # Blank variable for mark file converted to number of hours
 tubeLength = -1  # Blank variable for user-set tube length in mm
 analState = -1  # Analysis state
-prelimContents = [["Tube", "# Marks", "Average Period (hrs)"]]
+prelimContents = [["Tube", "# Marks", "Average Period (hrs)"]] # List of lists of preliminary analysis data for home screen
 tubeBounds = []  # each element is a tube, then [[ymin, ymax],...]
 meanTubeWidth = -1  # Mean width of race tubes in uploaded image in px
 horizontalLines = []  # Horizontal lines separating tubes in form [slope, intercept]
@@ -44,24 +50,28 @@ bandLines = []  # Locations of conidial bands in form [x, ycenter, tube]
 densityProfiles = []  # Density profiles of tubes in b/w image format
 tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densityProfile, growthRate, tubeRange, timeMarks, bandMarks]
 canvas = None  # Plot entity
-keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Shift, Command, S, O, P, D, H
-plotsInfo = []
+keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Shift, Command/Control, S, O, P, D, H
+plotsInfo = []  # Info to pass along to individual plot constructors
 
 
 def setWorkingDirectory():
     """Prompt user to set a working directory for the application, and save this to the local parameters file."""
     global appParameters
     global workingDir
+    
     workingDir = app.select_folder(title="Please select working directory:", folder="/")  # Set working directory variable to user-specified directory via file selection popup
-    appParameters["workingDir"] = workingDir  # Populate parameters dictionary with user-specified working directory
-    updateAppParameters()
+    appParameters["workingDir"] = workingDir  # Populate global parameters dictionary with user-specified working directory
+    updateAppParameters()  # Update app parameters
 
 
 def updateAppParameters():
+    """Update app parameters file from global variable"""
     global appParameters
     
+    # Get path to parameters file within package
     directoryPath = os.path.dirname(__file__)
     parametersPath = os.path.join(directoryPath, "parameters.txt")
+    #Open parameters file and overwrite from global app parameters dictionary
     with open(parametersPath, newline="", mode="w") as parametersFile:  # Open parameters.txt file
         writer = csv.writer(parametersFile, delimiter="=")  # Define csv writer
         for key in appParameters:  # For each key in parameters dictionary
@@ -75,8 +85,9 @@ def openExperimentFile(reopen=False):  # Open an experiment file
     global tubesMaster
 
     cancelImageAnalysis()  # Zero out any existing information from a different open file or a newly analyzed race tube image
-    tubesMaster = []  # Blank out master tube list in preparation for population from opened file
-    if openFile == "" or reopen is False:
+    tubesMaster = []  # Blank out global master tube list in preparation for population from opened file
+    #Ensure there is a file to open
+    if openFile == "" or reopen is False:  # If no file is currently open or if file name is specified because it is being reopened after saving
         openFile = app.select_file(
             title="Select experiment file",
             folder=workingDir,
@@ -84,10 +95,10 @@ def openExperimentFile(reopen=False):  # Open an experiment file
             save=False,
             filename="",
         )  # Prompt user by popup to select experiment file from working directory and save name as openFile
-    if openFile == "":  # If openFile remains blank
+    if openFile == "":  # If openFile remains blank after this (because user canceled popup)
         return  # Abort function
-    with open(openFile, newline="") as experimentFile:  # Open user-specified txt file
-        tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader
+    with open(openFile, newline="") as experimentFile:  # Open user-specified txt experiment file
+        tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %
         for tube in tubesInFile:  # For each line of experiment file
             parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank variable for parsed tube
             parsedTube["setName"] = str(tube[0])
@@ -159,8 +170,6 @@ def openExperimentFile(reopen=False):  # Open an experiment file
         populateExperimentDataTable()  # Populate experiment data table
         populateStatisticalAnalysisLists()  # Populate statistical analysis frame
         populatePlotTubeSelectionLists()  # Populate plot data frame
-
-        return tubesMaster
 
 
 def saveExperimentFile():  # Save current experiment
@@ -769,7 +778,7 @@ def calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, minPeri
     # Calculate Lomb-Scargle Periodogram
     frequencyInterval = int(((2 * numpy.pi) / minPeriodPixels - (2 * numpy.pi) / maxPeriodPixels) / 0.0001)  # Number of angular frequencies to test for Lomb-Scargle at an interval of 0.0001
     frequenciesLombScargle = (numpy.linspace((2 * numpy.pi) / maxPeriodPixels, (2 * numpy.pi) / minPeriodPixels, frequencyInterval).tolist())  # Create list of angular frequencies to test for Lomb-Scargle periodogram
-    periodogramChiSquaredLombScargle = lombscargle(list(range(0, len(densityProfileNoTimeMarks))), densityProfileNoTimeMarks, frequenciesLombScargle)  # Get Lomb-Scargle periodogram
+    periodogramChiSquaredLombScargle = lombscargle(list(range(0, len(densityProfileNoTimeMarks))), densityProfileNoTimeMarks, frequenciesLombScargle, precenter=True)  # Get Lomb-Scargle periodogram
     periodogramChiSquaredLombScargle = periodogramChiSquaredLombScargle.tolist()  # Convert L-S periodogram values to list
     # Convert frequencies to periods
     periodLombScarglePixels = ((2 * numpy.pi) / frequenciesLombScargle[periodogramChiSquaredLombScargle.index(numpy.max(periodogramChiSquaredLombScargle))])  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
