@@ -12,7 +12,7 @@ Rhythmidia
 ==============================
 ## Race Tube Images
 1. Crop your scanned race tube image as desired, leaving some background on either edge
-2. No need to make your image greyscale, fix its rotation, or increase contrast- Chonidia will take care of all of this internally!
+2. No need to make your image greyscale, fix its rotation, or increase contrast- Rhythmidia will take care of all of this internally!
 3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
 ## Rhythmidia out of the Box
@@ -31,7 +31,7 @@ Rhythmidia
 4. Rotate your image so that the growth direction of the tubes is from left to right across your screen<br />
     a. To rotate your image 90 degrees clockwise, click the button labeled “Rotate”<br />
 5. When you are satisfied with your image’s orientation, click the button labeled “Lock & Analyze Image”
-6. Chronidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes.
+6. Rhythmidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes.
 7. You will be directed to verify these lines:<br />
     a. To remove an incorrect line, simply click on the line<br />
     b. To add a missing line, simply click in an unoccupied position on the image<br />
@@ -68,6 +68,11 @@ Save File                 (⌘S)<br />
 Save as…                 (↑⌘S)<br />
 Set working directory     (⌘D)<br />
 Open graphics preferences (⌘P)<br />
+
+==============================
+## Changelog
+V0.01: 
+
 
 ==============================
 
