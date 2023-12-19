@@ -419,8 +419,8 @@ def identifyHorizontalLines():
         if numpy.min(rowMeansLeftMinimaAccepted) > 10:  # If no dark zone was detected on top edge of image
             rowMeansLeftMinimaAccepted.append(3)  # Add one at y=3
     if len(rowMeansRightMinimaAccepted) > 0:
-        if numpy.max(rowMeansLeftMinimaAccepted) < 390:  # If no dark zone was detected on bottom edge of image
-            rowMeansLeftMinimaAccepted.append(397)  # Add one at y=397
+        if numpy.max(rowMeansRightMinimaAccepted) < 390:  # If no dark zone was detected on bottom edge of image
+            rowMeansRightMinimaAccepted.append(397)  # Add one at y=397
     
     # Create lines based on pairs of dark spots (or lack thereof)
     horizontalLineSlopes1 = []  # Empty list of slopes for method 1
@@ -454,7 +454,7 @@ def identifyHorizontalLines():
         if abs(slope) < 2:  # If slope is not too steep
             isDuplicate = 0
             for acceptedLineIntercept in horizontalLineIntercepts2:
-                if abs(acceptedLineIntercept - intercept) < 20 or abs(numpy.mean(horizontalLineSlopes2) - slope) > 0.015 or numpy.sign(numpy.mean(horizontalLineSlopes2)) != numpy.sign(slope):
+                if abs(acceptedLineIntercept - intercept) < 45 or abs(numpy.mean(horizontalLineSlopes2) - slope) > 0.015 or numpy.sign(numpy.mean(horizontalLineSlopes2)) != numpy.sign(slope):
                     isDuplicate = 1
             if isDuplicate == 0:
                 horizontalLineSlopes2.append(slope)  # Add slope to slope list for method 2
