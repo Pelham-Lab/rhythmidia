@@ -2,6 +2,7 @@ from guizero import *
 from tkinter import Canvas
 import pyautogui
 from PIL import Image, ImageEnhance
+import PIL
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
 import matplotlib.pyplot as plt
@@ -228,7 +229,7 @@ def selectExperTab():
     experimentTab.focus()
 
 
-def uploadRaceTubeImage():  # Prompt file upload of race tube image
+def uploadRaceTubeImage():
     """Prompt user to upload a new race tube image, and display it in the image frame."""
     global rawImage
     global imageName
@@ -256,7 +257,7 @@ def uploadRaceTubeImage():  # Prompt file upload of race tube image
     resetRaceTubeImageAnalysisButton.enable()  # Enable button to reset analysis
 
 
-def rotateRaceTubeImage():  # Rotate race tube image clockwise
+def rotateRaceTubeImage():
     """Rotate current image 90 degrees clockwise."""
     global rawImage
     global rotateDeg
@@ -998,6 +999,15 @@ def populateStatisticalAnalysisLists():
         if tube["setName"] in setsSelected:  # If tube set name is in list of selected sets
             tubesToDisplay.append(tube["setName"] + " | " + str(tube["tubeNumber"] + 1))  # Add set and tube to list of tube options
     
+    # Account for new file opens
+    if sorted(experimentTabStatisticalAnalysisSetList.items) != sorted(setsToDisplay):  # If sets in list don't match current open file
+        while len(experimentTabStatisticalAnalysisSetList.items) > 0:  # Until set list is empty
+            for item in experimentTabStatisticalAnalysisSetList.items:  # For each item in set list
+                experimentTabStatisticalAnalysisSetList.remove(item)  # Remove item from set list
+        for index, setName in enumerate(setsToDisplay):  # For each set to display
+            experimentTabStatisticalAnalysisSetList.insert(index, setName)  # Add set name to tube list
+        setsSelected = []
+    
     #Change elements of set and tube lists to reflect user selections
     if len(experimentTabStatisticalAnalysisSetList.items) == 0:  # If set list is empty
         for index, setName in enumerate(setsToDisplay):  # For each set to display
@@ -1126,145 +1136,134 @@ def populatePlots():
     timeMarks = tubeToPlot["timeMarks"]  # Set time marks
     markHours = tubeToPlot["markHours"]  # Set mark hours
     bandMarks = tubeToPlot["bandMarks"]  # Set band marks
-
-    densitometryXValsRaw = list(range(0, 1160))
-    timeGaps = []
-    for mark in range(0, len(timeMarks) - 1):
-        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))#gaps in px/hr
-    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
-    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
-    densitometryXValsHours = []
-    for xPixel in densitometryXValsRaw:
-        densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
-    if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":
-        hoursStartCalculationWindow = densitometryXValsHours[0]
-        hoursEndCalculationWindow = densitometryXValsHours[-1]
-        experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)
-        experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)
-    else:
-        hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
-        hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
-    if hoursStartCalculationWindow <= float(experimentTabTableParamsHrsLowTextBox.value):
-        hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)
-    if hoursEndCalculationWindow >= float(experimentTabTableParamsHrsHighTextBox.value):
-        hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)
-    hoursStartCalculationWindowIndex = None
-    hoursEndCalculationWindowIndex = None
-    for index, hours in enumerate(densitometryXValsHours):
-        if hoursStartCalculationWindowIndex is None and hoursStartCalculationWindow <= hours:
-            hoursStartCalculationWindowIndex = index
-        if hoursEndCalculationWindowIndex is None and hoursEndCalculationWindow <= hours:
-            hoursEndCalculationWindowIndex = index
-    if hoursEndCalculationWindowIndex is None:
-        hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1
-    windowOfDensityProfile = tubeToPlot["densityProfile"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
-    windowOfTubeRange = tubeToPlot["tubeRange"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
-    windowOfMarkHours = []
-    windowOfTimeMarks = []
-    windowOfBandMarks = []
-    windowOfDensitometryXValsHours = densitometryXValsHours[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
-    timeMarksHours = []
-    windowOfTimeMarksHours = []
-    for xPixel in timeMarks:
-        timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
-    bandMarksHours = []
-    windowOfBandMarksHours = []
-    for xPixel in bandMarks:
-        bandMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))
-    densitometryYVals = windowOfDensityProfile
-    for index, value in enumerate(timeMarks):
-        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
-            windowOfTimeMarks.append(value-hoursStartCalculationWindowIndex)
-            windowOfMarkHours.append(markHours[index])
-            windowOfTimeMarksHours.append(timeMarksHours[index])
-    for index, value in enumerate(bandMarks): 
-        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:
-            windowOfBandMarks.append(value-hoursStartCalculationWindowIndex)
-            windowOfBandMarksHours.append(bandMarksHours[index])
     
-
-
-
-
-
+    # Narrow down values within time window and get values of densitometry plot
+    densitometryXValsRaw = list(range(0, 1160))  # List of densitometry x axis values from 0-1159
+    timeGaps = []  # Empty list for gaps between time marks in pixels/hour
+    for mark in range(0, len(timeMarks) - 1):  # For each pair of time marks
+        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))  # Add gap between time marks in pixels/hour to list
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean growth rate in pixels per hour
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour  # Mean growth rate in hours per pixel
+    densitometryXValsHours = []  # Blank list for densitometry x axis values in hours
+    for xPixel in densitometryXValsRaw:  # For each pixel x value in densitometry x axis
+        densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))  # Add corresponding time in hours to list of densitometry x axis values in hours
+    if experimentTabTableParamsHrsLowTextBox.value == "" and experimentTabTableParamsHrsHighTextBox.value == "":  # If text boxes for start and end of time window are empty
+        hoursStartCalculationWindow = densitometryXValsHours[0]  # Set start of time window to first possible value
+        hoursEndCalculationWindow = densitometryXValsHours[-1]  # Set end of time window to last possible value
+        experimentTabTableParamsHrsLowTextBox.value = str(hoursStartCalculationWindow)  # Set value of text box for start of time window to start of time window
+        experimentTabTableParamsHrsHighTextBox.value = str(hoursEndCalculationWindow)  # Set value of text box for end of time window to end of time window
+    else:  # Otherwise
+        hoursStartCalculationWindow = float(experimentTabTableParamsHrsLowTextBox.value)  # Set start of time window to value of text box for start of time window
+        hoursEndCalculationWindow = float(experimentTabTableParamsHrsHighTextBox.value)  # Set end of time window to value of text box for end of time window
+    hoursStartCalculationWindowIndex = None  # Index of start of time window in list of densitometry x axis values in hours
+    hoursEndCalculationWindowIndex = None  # Index of end of time window in list of densitometry x axis values in hours
+    for index, hours in enumerate(densitometryXValsHours):  # For each time in list of densitometry x axis values in hours
+        if hoursStartCalculationWindowIndex is None and hoursStartCalculationWindow <= hours:  # If we just passed start of time window
+            hoursStartCalculationWindowIndex = index  # Set index of start of time window to current index
+        if hoursEndCalculationWindowIndex is None and hoursEndCalculationWindow <= hours:  # If we just passed end of time window
+            hoursEndCalculationWindowIndex = index  # Set index of end of time window to current index
+    if hoursEndCalculationWindowIndex is None:  # If there is still no index of end of time window
+        hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1  # Set index of end of time window to last possible index
+    windowOfDensityProfile = tubeToPlot["densityProfile"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set time window to portion of density profile between time window indices
+    windowOfTubeRange = tubeToPlot["tubeRange"][hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set corresponding portion of tube range
+    windowOfMarkHours = []  # Blank list for portion of mark hours within time window
+    windowOfTimeMarks = []  # Blank list for portion of time marks within time window
+    windowOfBandMarks = []  # Blank list for portion of band marks within time window
+    windowOfDensitometryXValsHours = densitometryXValsHours[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Portion of densitometry x axis values in hours between time window indices
+    timeMarksHours = []  # Blank list for corresponding times of time marks
+    windowOfTimeMarksHours = []  # Blank list for portion of times of time marks within time window
+    for xPixel in timeMarks:  # For x position of each time mark
+        timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))  # Add normalized time mark x position converted to hours, rounded
+    bandMarksHours = []  # Blank list for corresponding times of band marks
+    windowOfBandMarksHours = []  # Blank list for portion of times of band marks within time window
+    for xPixel in bandMarks:  # For x position of each band mark
+        bandMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))  # Add normalized band mark x position converted to hours, rounded
+    densitometryYVals = windowOfDensityProfile  # Set y values of densitometry to portion of densitometry within time window
+    for index, value in enumerate(timeMarks):  # For each time mark x position
+        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:  # If time mark is within time window
+            windowOfTimeMarks.append(value-hoursStartCalculationWindowIndex)  # Add time mark x position to list of portion of time marks within time window, normalized so first value is 0
+            windowOfMarkHours.append(markHours[index])  # Add corresponding mark hours value to list of portion of mark hours within time window
+            windowOfTimeMarksHours.append(timeMarksHours[index])  # Add corresponding time of time mark to list of portion of times of time marks within time window
+    for index, value in enumerate(bandMarks):  # For each band mark x position
+        if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:  # If band mark is within time window
+            windowOfBandMarks.append(value-hoursStartCalculationWindowIndex)  # Add band mark x position to list of prtion of band marks within time window, normalized so first value is 0
+            windowOfBandMarksHours.append(bandMarksHours[index])  # Add corresponding time of band mark to list of portion of times of band marks within time window
     
-
+    # Create periodogram plot data
+    periodData = calculatePeriodData(windowOfDensityProfile, windowOfMarkHours, windowOfTimeMarks, windowOfBandMarks, 14, 32, windowOfTubeRange)  # Calculate period data for time window
+    periodogramXVals = []  # Blank list for x values of periodogram
+    periodogramYVals = []  # Blank list for y values of periodogram
+    calculatedPeriodogramFrequencies = periodData[method-1]  # Set list calculated periodogram frequencies
+    calculatedPeriodogramYVals = periodData[method]  # Set list of calculated periodogram y values
+    slopeCoeff = periodData[9]  # Set slope coefficient
+    for frequency in range(0, len(calculatedPeriodogramFrequencies)):  # For each frequency in periodogram frequencies
+        if method == 4:  # If method is 4 (Sokolove-Bushell)
+            period = 1 / calculatedPeriodogramFrequencies[frequency]  # Set period to period for S-B frequency
+        else:  # If method is Lomb-Scargle
+            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[frequency]  # Set period to period for L-S angular frequency
+        xVal = period * meanGrowthHoursPerPixel * slopeCoeff  # Set x value in hours to product of period in pixels, slope coefficient, and ratio of hours to pixels to get actual period in hours
+        if xVal >= 14 and xVal <= 32:  # If x value in hours is within period range
+            periodogramXVals.append(xVal)  # Add x value to list of periodogram x values
+            periodogramYVals.append(calculatedPeriodogramYVals[frequency])  # Add corresponding y value to list of periodogram y values
     
-    
-    #Create period plot data
-    periodData = calculatePeriodData(windowOfDensityProfile, windowOfMarkHours, windowOfTimeMarks, windowOfBandMarks, 14, 32, windowOfTubeRange)
-    periodogramXVals = []
-    periodogramYVals = []
-    calculatedPeriodogramFrequencies = periodData[method-1]
-    calculatedPeriodogramYVals = periodData[method]
-    slopeCoeff = periodData[9]
-    for frequency in range(0, len(calculatedPeriodogramFrequencies)):
-        if method == 4:  # SB
-            period = 1 / calculatedPeriodogramFrequencies[frequency]
-        else:  # LS
-            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[frequency]
-        xVal = period * meanGrowthHoursPerPixel * slopeCoeff
-        if xVal >= 14 and xVal <= 32:#Within 14-32 x range
-            periodogramXVals.append(xVal)
-            periodogramYVals.append(calculatedPeriodogramYVals[frequency])
-    #Plotting stuff
-    gridSpecLayout = gridspec.GridSpec(2,1)
-    numPixelsForFigureDownload = 1/plt.rcParams['figure.dpi']
-    tubeDoubleFigure = plt.figure(figsize=(int(screenWidth*0.5)*numPixelsForFigureDownload, int(screenWidth*0.2)*numPixelsForFigureDownload))
-    tubeDoubleFigurePlots = [None, None]
-    tubeDoubleFigurePlots[0] = tubeDoubleFigure.add_subplot(gridSpecLayout[0])
-    tubeDoubleFigurePlots[1] = tubeDoubleFigure.add_subplot(gridSpecLayout[1])
-    densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
-    densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
-    densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
-    periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData[7], periodData[8] + 1)))
-    plotsInfo = [windowOfDensitometryXValsHours, densitometryYVals, timeMarksHours, bandMarksHours, periodogramXVals, periodogramYVals, periodogramXAxisLabels]
-    tubeDoubleFigurePlots[0].plot(windowOfDensitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
-    tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)
-    tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)
-    tubeDoubleFigurePlots[0].xaxis.set_minor_locator(densitometryXAxisMinorLabels)
+    # Create densitometry and periodogram plots
+    gridSpecLayout = gridspec.GridSpec(2,1)  # Specification for grid of multi-plot figure
+    numPixelsForFigureDownload = 1/plt.rcParams['figure.dpi']  # Set number of pixels for figure download
+    tubeDoubleFigure = plt.figure(figsize=(int(screenWidth*0.5)*numPixelsForFigureDownload, int(screenWidth*0.2)*numPixelsForFigureDownload))  # Create figure to contain both plots
+    tubeDoubleFigurePlots = [None, None]  # Blank list of plots in figure
+    tubeDoubleFigurePlots[0] = tubeDoubleFigure.add_subplot(gridSpecLayout[0])  # Set up first plot in figure
+    tubeDoubleFigurePlots[1] = tubeDoubleFigure.add_subplot(gridSpecLayout[1])  # Set up second plot in figure 
+    densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))  # Set densitometry x axis major labels to every 12 hours
+    densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])  # Set densitometry y axis major labels
+    densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))  # Set densitometry x axis minor labels to every 3 hours
+    periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData[7], periodData[8] + 1)))  # Set periodogram x axis major labels to each hour in range of hours
+    plotsInfo = [windowOfDensitometryXValsHours, densitometryYVals, timeMarksHours, bandMarksHours, periodogramXVals, periodogramYVals, periodogramXAxisLabels]  # List of plot info for downloading purposes
+    tubeDoubleFigurePlots[0].plot(windowOfDensitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])  # Create first plot of densitometry
+    tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)  # Set x axis major tick labels of densitometry plot
+    tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)  # Set y axis major tick labels of densitometry plot
+    tubeDoubleFigurePlots[0].xaxis.set_minor_locator(densitometryXAxisMinorLabels)  # Set x axis minor tick labels of densitometry plot
     tubeDoubleFigurePlots[0].set(
         xlabel="Time (hrs)", 
         ylabel="Density", 
         title="Densitometry"
-    )
+    )  # Set densitometry plot labels
     tubeDoubleFigurePlots[0].vlines(
         windowOfTimeMarksHours,
         numpy.min(densitometryYVals),
         numpy.max(densitometryYVals),
         colors=appParameters["colorVert"],
         label="Time Marks",
-    )
+    )  # Set densitometry plot vertical lines for time marks
     tubeDoubleFigurePlots[0].vlines(
         windowOfBandMarksHours, 
         numpy.min(densitometryYVals), 
         numpy.max(densitometryYVals), 
         colors=appParameters["colorBand"], 
         label="Bands"
-    )
-    tubeDoubleFigurePlots[0].grid()
-    tubeDoubleFigurePlots[0].legend(ncol=3, loc="best", fontsize="x-small")
-    if method == 4:
-        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])
-    else:
-        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])
-    tubeDoubleFigurePlots[1].xaxis.set_major_locator(periodogramXAxisLabels)
+    )  # Set densitometry plot vertical lines for band marks
+    tubeDoubleFigurePlots[0].grid()  # Set grid for densitometry plot
+    tubeDoubleFigurePlots[0].legend(ncol=3, loc="best", fontsize="x-small")  # Set legend for densitometry plot
+    if method == 4:  # If using S-B periodogram
+        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])  # Create second plot of S-B periodogram
+    else:  # If using L-S periodogram
+        tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])  # Create second plot os L-S periodogram
+    tubeDoubleFigurePlots[1].xaxis.set_major_locator(periodogramXAxisLabels)  # Set x axis major labels for periodogram plot
     tubeDoubleFigurePlots[1].set(
         xlabel="Period (hrs)",
         title="Periodogram",
-    )
-    if method == 4:
-        tubeDoubleFigurePlots[1].set(ylabel="Chi Squared")
-    else:
-        tubeDoubleFigurePlots[1].set(ylabel="Spectral Density")
-    tubeDoubleFigurePlots[1].grid()
-    tubeDoubleFigurePlots[1].legend(fontsize="x-small")
-    tubeDoubleFigure.tight_layout()
+    )  # Set labels for periodogram plot
+    if method == 4:  # If using S-B periodogram
+        tubeDoubleFigurePlots[1].set(ylabel="Chi Squared")  # Set y label for S-B periodogram
+    else:  # If using L-S periodogram
+        tubeDoubleFigurePlots[1].set(ylabel="Spectral Density")  # Set y label for L-S periodogram
+    tubeDoubleFigurePlots[1].grid()  # Set grid for periodogram plot
+    tubeDoubleFigurePlots[1].legend(fontsize="x-small")  # Set legend for periodogram plot
+    tubeDoubleFigure.tight_layout()  # Set tight layout for figure
     if canvas is not None:
-        canvas.get_tk_widget().pack_forget()
-    canvas = FigureCanvasTkAgg(tubeDoubleFigure, master=experimentTabPlotCanvas)
-    canvas.draw()
-    canvas.get_tk_widget().pack()
+        canvas.get_tk_widget().pack_forget()  # Clear plot canvas
+    canvas = FigureCanvasTkAgg(tubeDoubleFigure, master=experimentTabPlotCanvas)  # Populate plot canvas with figure
+    canvas.draw()  # Draw figure onto canvas
+    canvas.get_tk_widget().pack()  # Pack plot canvas
 
 
 def populatePlotTubeSelectionLists():
@@ -1276,6 +1275,7 @@ def populatePlotTubeSelectionLists():
     global experimentTabPlotTubeSelectionTubeList
 
 
+    #Get information for selected set and tube
     setsToDisplay = []  # Blank list of tube sets
     tubesToDisplay = []  # Blank list of tubes
     setsSelected = experimentTabPlotTubeSelectionSetList.value  # Set selected set
@@ -1290,6 +1290,14 @@ def populatePlotTubeSelectionLists():
         if tube["setName"] in setsSelected:  # If tube set name is in list of selected sets
             tubesToDisplay.append(tube["setName"] + " | " + str(tube["tubeNumber"] + 1))  # Add set and tube to list of tube options
     
+    # Account for new file opens
+    if sorted(experimentTabPlotTubeSelectionSetList.items) != sorted(setsToDisplay):  # If sets in list don't match current open file
+        while len(experimentTabPlotTubeSelectionSetList.items) > 0:  # Until set list is empty
+            for item in experimentTabPlotTubeSelectionSetList.items:  # For each item in set list
+                experimentTabPlotTubeSelectionSetList.remove(item)  # Remove item from set list
+        for index, setName in enumerate(setsToDisplay):  # For each set to display
+            experimentTabPlotTubeSelectionSetList.insert(index, setName)  # Add set name to tube list
+        setsSelected = []
     
     #Change elements of set and tube lists to reflect user selections
     if len(experimentTabPlotTubeSelectionSetList.items) == 0:  # If set list is empty
@@ -1303,99 +1311,112 @@ def populatePlotTubeSelectionLists():
     experimentTabPlotTubeSelectionTubeList.value = tubeSelected  # Preselect user-specified tubes
 
 
-def saveStatisticalAnalysisData():#all periods etc
+def saveStatisticalAnalysisData():
+    """Save statistical analysis output as csv."""
+    
+    
     global workingDir
     global experimentTabStatisticalAnalysisSetList
     global experimentTabStatisticalAnalysisTubeList
     global experimentTabStatisticalAnalysisMethodList
     global tubesMaster
     
+
+    # Get information of selected tubes
     setNamesSelected = experimentTabStatisticalAnalysisSetList.value
     tubesSelected = experimentTabStatisticalAnalysisTubeList.value
     fileRows = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
         if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[0:3])
+            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[0:3])  # List of set name, tube name, and all three periods for each tube
             fileRows.append(fileRow)  # Add selected period to list of periods for analysis
-    periodsManual = []
-    periodsSokoloveBushell= []
-    periodsLombScargle = []
-    for row in fileRows:
-        periodsManual.append(row[2])
-        periodsSokoloveBushell.append(row[3])
-        periodsLombScargle.append(row[4])
-    fileRows.append(["Mean", "n = "+str(len(periodsManual)), numpy.mean(periodsManual), numpy.mean(periodsSokoloveBushell), numpy.mean(periodsLombScargle)])
-    fileRows.append(["Standard Deviation", "", numpy.std(periodsManual), numpy.std(periodsSokoloveBushell), numpy.std(periodsLombScargle)])
-    fileRows.append(["Standard Error of Means", "", numpy.std(periodsManual)/numpy.sqrt(len(periodsManual)), numpy.std(periodsSokoloveBushell)/numpy.sqrt(len(periodsSokoloveBushell)), numpy.std(periodsLombScargle)/numpy.sqrt(len(periodsLombScargle))])
+    
+    #Create file contents
+    periodsManual = []  # Blank list for manual periods
+    periodsSokoloveBushell= []  # Blank list for S-B periods
+    periodsLombScargle = []  # Blank list for L-S periods
+    for row in fileRows:  # For each file row
+        periodsManual.append(row[2])  # Add manual period to list of manual periods
+        periodsSokoloveBushell.append(row[3])  # Add S-B period to list of S-B periods
+        periodsLombScargle.append(row[4])  # Add L-S period to list of L-S periods
+    fileRows.append(["Mean", "n = "+str(len(periodsManual)), numpy.mean(periodsManual), numpy.mean(periodsSokoloveBushell), numpy.mean(periodsLombScargle)])  # Add row to file for means of each period type
+    fileRows.append(["Standard Deviation", "", numpy.std(periodsManual), numpy.std(periodsSokoloveBushell), numpy.std(periodsLombScargle)])  # Add row to file for standard deviations of each period type
+    fileRows.append(["Standard Error of Means", "", numpy.std(periodsManual)/numpy.sqrt(len(periodsManual)), numpy.std(periodsSokoloveBushell)/numpy.sqrt(len(periodsSokoloveBushell)), numpy.std(periodsLombScargle)/numpy.sqrt(len(periodsLombScargle))])  # Add row to file for standard errors of means of each period type
     dataFileName = app.select_file(
         title="Save period data as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
         filename=("_".join(setNamesSelected) + "_period_data"),
-    )
-    with open(dataFileName, 'w', newline='') as dataFile:
-        rowWriter = csv.writer(dataFile, delimiter=',')
-        rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Manually Calculated)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])
-        for fileRow in fileRows:
-            rowWriter.writerow(fileRow)
+    )  # Get user selection of file name and location with app popup
+    with open(dataFileName, 'w', newline='') as dataFile:  # Open user-specified csv file location
+        rowWriter = csv.writer(dataFile, delimiter=',')  # Write rows delimited by ","
+        rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Manually Calculated)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])  # Write title row
+        for fileRow in fileRows:  # For each file row
+            rowWriter.writerow(fileRow)  # Write row to file
 
 
 def saveDensitometryPlot():
+    """Save densitometry plot as image."""
+
+
     global plotsInfo
     global workingDir
     global experimentTabPlotTubeSelectionSetList
     global experimentTabPlotTubeSelectionTubeList
     global appParameters
     
-    if plotsInfo is not []:
-        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]
+    if plotsInfo is not []:  # If plots have already been created
+        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]  # Get tube number from tube name in tube list selection
         plotFileName = app.select_file(
             title="Save plot as...",
             folder=workingDir,
             filetypes=[["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"], ["SVG", "*.svg"]],
             save=True,
             filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber + "_densitometry"),
-        )
-        densitometryXValsHours = plotsInfo[0]
-        densitometryYVals = plotsInfo[1]
-        timeMarksHours = plotsInfo[2]
-        bandMarksHours = plotsInfo[3]
-        densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))
-        densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])
-        densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))
-        densitometrySingleFigure = plt.figure(figsize=[7.5, 2.1])
-        densitometrySingleFigurePlot = densitometrySingleFigure.add_subplot()
-        densitometrySingleFigurePlot.plot(densitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])
-        densitometrySingleFigurePlot.xaxis.set_major_locator(densitometryXAxisLabels)
-        densitometrySingleFigurePlot.yaxis.set_major_locator(densitometryYAxisLabels)
-        densitometrySingleFigurePlot.xaxis.set_minor_locator(densitometryXAxisMinorLabels)
+        )  # Get file name and save location from user via app popup
+        densitometryXValsHours = plotsInfo[0]  # Set list of densitometry x axis values in hours
+        densitometryYVals = plotsInfo[1]  # Set list of densitometry y axis values
+        timeMarksHours = plotsInfo[2]  # Set list of time mark x values
+        bandMarksHours = plotsInfo[3]  # Set list of band mark x values
+        densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 12)))  # Set x axis major tick labels
+        densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])  # Set y axis major tick labels
+        densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(-24, 193, 3)))  # Set x axis minor tick labels
+        densitometrySingleFigure = plt.figure(figsize=[7.5, 2.1])  # Set up figure
+        densitometrySingleFigurePlot = densitometrySingleFigure.add_subplot()  # Add plot to figure
+        densitometrySingleFigurePlot.plot(densitometryXValsHours, densitometryYVals, label="Density profile", color=appParameters["colorGraph"])  # Set up densitometry plot
+        densitometrySingleFigurePlot.xaxis.set_major_locator(densitometryXAxisLabels)  # Label x axis major ticks
+        densitometrySingleFigurePlot.yaxis.set_major_locator(densitometryYAxisLabels)  # Label y axis major ticks
+        densitometrySingleFigurePlot.xaxis.set_minor_locator(densitometryXAxisMinorLabels)  # Label x axis minor ticks
         densitometrySingleFigurePlot.set(
             xlabel="Time (hrs)", 
             ylabel="Density", 
             title="Densitometry"
-        )
+        )  # Set labels for plot
         densitometrySingleFigurePlot.vlines(
             timeMarksHours,
             numpy.min(densitometryYVals),
             numpy.max(densitometryYVals),
             colors=appParameters["colorVert"],
             label="Time Marks",
-        )
+        )  # Set vertical lines for time marks
         densitometrySingleFigurePlot.vlines(
             bandMarksHours, 
             numpy.min(densitometryYVals), 
             numpy.max(densitometryYVals), 
             colors=appParameters["colorBand"], 
             label="Bands"
-        )
-        densitometrySingleFigurePlot.grid()
-        densitometrySingleFigurePlot.legend(ncol=3, loc="best", fontsize="x-small")
-        densitometrySingleFigure.tight_layout(pad=2)
-        densitometrySingleFigure.savefig(plotFileName)
+        )  # Set vertical lines for band marks
+        densitometrySingleFigurePlot.grid()  # Set grid for plot
+        densitometrySingleFigurePlot.legend(ncol=3, loc="best", fontsize="x-small")  # Set legend for plot
+        densitometrySingleFigure.tight_layout(pad=2)  # Set tight layout for plot
+        densitometrySingleFigure.savefig(plotFileName)  # Save figure as image
 
 
 def savePeriodogramPlot():
+    """Save periodogram plot as image."""
+
+
     global plotsInfo
     global workingDir
     global experimentTabPlotTubeSelectionSetList
@@ -1403,86 +1424,94 @@ def savePeriodogramPlot():
     global experimentTabPlotTubeSelectionMethodList
     global appParameters
 
-    if plotsInfo is not []:
-        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]
+
+    if plotsInfo is not []:  # If plots have already been created
+        tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]  # Get tube number from tube name in tube list selection
         plotFileName = app.select_file(
             title="Save plot as...",
             folder=workingDir,
             filetypes=[["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"], ["SVG", "*.svg"]],
             save=True,
             filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber + "_" + experimentTabPlotTubeSelectionMethodList.value),
-        )
-        periodogramXVals = plotsInfo[4]
-        periodogramYVals = plotsInfo[5]
-        periodogramXAxisLabels = plotsInfo[6]
-        periodogramSingleFigure = plt.figure(figsize=[7.5, 2.1])
-        periodogramSingleFigurePlot = periodogramSingleFigure.add_subplot()
-        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":
-            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])
-        else:
-            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])
-        periodogramSingleFigurePlot.xaxis.set_major_locator(periodogramXAxisLabels)
+        )  # Get file name and save location from user input from app popup
+        periodogramXVals = plotsInfo[4]  # Set list of periodogram x values
+        periodogramYVals = plotsInfo[5]  # Set list of periodogram y values
+        periodogramXAxisLabels = plotsInfo[6]  # Set list of periodogram x axis labels
+        periodogramSingleFigure = plt.figure(figsize=[7.5, 2.1])  # Set up figure
+        periodogramSingleFigurePlot = periodogramSingleFigure.add_subplot()  # Set up plot
+        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":  # If using S-B periodogram
+            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])  # Create plot of S-B periodogram
+        else:  # If using L-S periodogram
+            periodogramSingleFigurePlot.plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])  # Create plot of L-S periodogram
+        periodogramSingleFigurePlot.xaxis.set_major_locator(periodogramXAxisLabels)  # Set x axis major labels
         periodogramSingleFigurePlot.set(
             xlabel="Period (hrs)",
             title="Periodogram",
-        )
-        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":
-            periodogramSingleFigurePlot.set(ylabel="Chi Squared")
-        else:
-            periodogramSingleFigurePlot.set(ylabel="Spectral Density")
-        periodogramSingleFigurePlot.grid()
-        periodogramSingleFigurePlot.legend(fontsize="x-small")
-        periodogramSingleFigure.tight_layout(pad=2)
-        periodogramSingleFigure.savefig(plotFileName)
+        )  # Set plot labels
+        if experimentTabPlotTubeSelectionMethodList.value == "Sokolove-Bushell":  # If using S-B periodogram
+            periodogramSingleFigurePlot.set(ylabel="Chi Squared")  # Set y label for S-B periodogram
+        else:  # If using L-S periodogram
+            periodogramSingleFigurePlot.set(ylabel="Spectral Density")  # Set y label for L-S periodogram
+        periodogramSingleFigurePlot.grid()  # Set grid for plot
+        periodogramSingleFigurePlot.legend(fontsize="x-small")  # Set legend for plot
+        periodogramSingleFigure.tight_layout(pad=2)  # Set tight layout for plot
+        periodogramSingleFigure.savefig(plotFileName)  # Save figure as image
 
 
 def saveDensitometryData():
+    """Save densitometry data as csv."""
+    
+    
     global workingDir
     global experimentTabPlotTubeSelectionSetList
     global experimentTabPlotTubeSelectionTubeList
     global tubesMaster
     
-    setName = experimentTabPlotTubeSelectionSetList.value
-    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1
+
+    setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list 
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1  # Get tube number from selected tube name in tube list
     densitometryFileName = app.select_file(
         title="Save densitometry as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
         filename=(setName + "_tube" + str(tubeNumber) + "_densitometry_data"),
-    )
-    densityProfile = []
-    timeMarks = []
-    bandMarks = []
-    markHours = []
-    for tube in tubesMaster:
-        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:
-            densityProfile = tube["densityProfile"]
-            timeMarks = tube["timeMarks"]
-            bandMarks = tube["bandMarks"]
-            markHours = tube["markHours"]
-    timeGaps = []
-    for mark in range(0, len(timeMarks) - 1):
-        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
-    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
-    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
-    with open(densitometryFileName, 'w', newline='') as csvfile:
-        rowWriter = csv.writer(csvfile, delimiter=',')
-        rowWriter.writerow(["Pixel (from left)", "Time (hrs)", "Density Profile", "Time/Band Marks"])
-        for index in range(0, 1160):
-            densityInHours = round((index - timeMarks[0]) * meanGrowthHoursPerPixel, 4)
-            newLine = [index, densityInHours, densityProfile[index], "N/A"]
-            markNote = []
-            if index in timeMarks:
-                markNote.append("Time")
-            if index in bandMarks:
-                markNote.append("Band")
-            if markNote is not []:
-                newLine[3] = "/".join(markNote)
-            rowWriter.writerow(newLine)
+    )  # Get file name and file save location from user input from app popup
+    densityProfile = []  # Blank list for density profile
+    timeMarks = []  # Blank list for time marks
+    bandMarks = []  # Blank list for bank marks
+    markHours = []  # Blank list for mark hours
+    for tube in tubesMaster:  # For each tube in global master tubes list
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:  # If tube matches selected tube
+            densityProfile = tube["densityProfile"]  # Set density profile to current tube's density profile
+            timeMarks = tube["timeMarks"]  # Set time marks to current tube's time marks
+            bandMarks = tube["bandMarks"]  # Set band marks to current tube's band marks
+            markHours = tube["markHours"]  # Set mark hours to current tube's mark hours
+    timeGaps = []  # Blank list for gaps between time marks in pixels/hour
+    for mark in range(0, len(timeMarks) - 1):  # For each pair of time marks
+        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))  # Add gap between time marks in pixels/hour to list
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean growth rate in pixels per hour
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour  # Mean growth rate in hours per pixel
+    with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
+        rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+        rowWriter.writerow(["Pixel (from left)", "Time (hrs)", "Density Profile", "Time/Band Marks"])  # Write title row to file
+        for index in range(0, 1160):  # For each x value in densitometry
+            densityInHours = round((index - timeMarks[0]) * meanGrowthHoursPerPixel, 4)  # Rounded value of densitometry x value in hours, normalized to 0
+            newLine = [index, densityInHours, densityProfile[index], "N/A"]  # Create line of file with note at end to indicate locations of time/band marks
+            markNote = []  # Empty list for mark note
+            if index in timeMarks:  # If this is a time mark
+                markNote.append("Time")  # Add that to the notes list
+            if index in bandMarks:  # If this is a band mark
+                markNote.append("Band")  # Add that to the notes list
+            if markNote is not []:  # If there are any band notes
+                newLine[3] = "/".join(markNote)  # Add them to the line, with a "/" in between if both are true
+            rowWriter.writerow(newLine)  # Write row to file
 
 
 def savePeriodogramData():
+    """Save periodogram data as csv."""
+    
+    
     global workingDir
     global experimentTabPlotTubeSelectionSetList
     global experimentTabPlotTubeSelectionTubeList
@@ -1490,65 +1519,68 @@ def savePeriodogramData():
     global tubesMaster
     global plotsInfo
 
-    setName = experimentTabPlotTubeSelectionSetList.value
-    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1
-    method = experimentTabPlotTubeSelectionMethodList.value
+
+    setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1  # Get tube number from selected tube name in tube list
+    method = experimentTabPlotTubeSelectionMethodList.value  # Get method from selection in method list
     periodogrammetryFileName = app.select_file(
         title="Save densitometry as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
         filename=(setName + "_tube" + str(tubeNumber) + "_" + method + "_data"),
-    )
+    )  # Get file name and save location from user input from app popup
     method = None  # Initialize method variable
     match experimentTabPlotTubeSelectionMethodList.value:  # Based on plot method selected
         case "Sokolove-Bushell":  # If method is Sokolove-Bushell
-            method = 4  # Set method to 4
+            method = 4  # Set method to 4 for index in period data
         case "Lomb-Scargle":  # If method is Lomb-Scargle
-            method = 6  # Set method to 6
-    tubeToPlot = []
-    timeMarks = []
-    markHours = []
-    for tube in tubesMaster:
-        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:
-            tubeToPlot = tube
-            timeMarks = tubeToPlot["timeMarks"]
-            markHours = tubeToPlot["markHours"]
-    timeGaps = []
-    for mark in range(0, len(timeMarks) - 1):
-        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))
-    meanGrowthPixelsPerHour = numpy.mean(timeGaps)
-    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour
-    periodData = calculatePeriodData(tubeToPlot["densityProfile"], markHours, timeMarks, tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"])
-    periodogramXVals = []
-    periodogramYVals = []
-    periodogramFrequencies = []
-    calculatedPeriodogramFrequencies = periodData[method-1]
-    calculatedPeriodogramYVals = periodData[method]
-    slopeCoeff = periodData[9]
-    for index in range(0, len(calculatedPeriodogramFrequencies)):
-        if method == 4:  # SB
-            period = 1 / calculatedPeriodogramFrequencies[index]
-        else:# LS
-            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[index]
-        xVal = period * meanGrowthHoursPerPixel * slopeCoeff
-        if xVal >= 14 and xVal <= 32:
-            periodogramXVals.append(xVal)
-            periodogramYVals.append(calculatedPeriodogramYVals[index])
-            periodogramFrequencies.append(calculatedPeriodogramFrequencies[index])
-    with open(periodogrammetryFileName, 'w', newline='') as csvfile:
-        rowWriter = csv.writer(csvfile, delimiter=',')
-        if method == 4:
-            rowWriter.writerow(["Frequency", "τ (hrs)", "Spectral Density"])
-        elif method == 6:
-            rowWriter.writerow(["Angular Frequency", "τ (hrs)", "Spectral Density"])
-        for index in range(0, len(periodogramXVals)):
-            newLine = [periodogramFrequencies[index], periodogramXVals[index], periodogramYVals[index]]
-            rowWriter.writerow(newLine)
+            method = 6  # Set method to 6 for index in period data
+    tubeToPlot = []  # Blank list for tube data of tube to plot
+    timeMarks = []  # Blank list for tube time marks
+    markHours = []  # Blank list for tube mark hours
+    for tube in tubesMaster:  # For each tube in global master tubes list
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:  # If tube matches selected tube name
+            tubeToPlot = tube  # Set tube to current tube
+            timeMarks = tubeToPlot["timeMarks"]  # Set time marks to time marks of current tube
+            markHours = tubeToPlot["markHours"]  # Set mark hours to mark hours of current tube
+    timeGaps = []  # Blank list for gaps between time marks in pixels/hour
+    for mark in range(0, len(timeMarks) - 1):  # For each pair of time marks
+        timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))  # Add gap between time marks in pixels/hour to list
+    meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean growth rate in pixels per hour
+    meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour  # Mean growth rate in hours per pixel
+    periodData = calculatePeriodData(tubeToPlot["densityProfile"], markHours, timeMarks, tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"])  # Calculate period data for selected tube
+    periodogramXVals = []  # Blank list for x axis values of periodogram plot
+    periodogramYVals = []  # Blank list for y axis values of periodogram plot
+    periodogramFrequencies = []  # Blank list of periodogram frequencies
+    calculatedPeriodogramFrequencies = periodData[method-1]  # List of calculated periodogram frequencies
+    calculatedPeriodogramYVals = periodData[method]  # List of calculated periodogram y values
+    slopeCoeff = periodData[9]  # Calculated slope coefficient
+    for index in range(0, len(calculatedPeriodogramFrequencies)):  # For each calculated periodogram frequency
+        if method == 4:  # If using S-B periodogram
+            period = 1 / calculatedPeriodogramFrequencies[index]  # Set period for S-B periodogram frequency
+        else:  # If using L-S periodogram
+            period = (2 * numpy.pi) / calculatedPeriodogramFrequencies[index]  # Set period for L-S periodogram angular frequency
+        xVal = period * meanGrowthHoursPerPixel * slopeCoeff  # Set x value to product of period in pixels, mean growth rate is hours/pixel, and slope coefficient (period in hours)
+        if xVal >= 14 and xVal <= 32:  # If x value is within window of tested periods
+            periodogramXVals.append(xVal)  # Add x value to periodogram x values
+            periodogramYVals.append(calculatedPeriodogramYVals[index])  # Add y value to periodogram y values
+            periodogramFrequencies.append(calculatedPeriodogramFrequencies[index])  # Add frequency to periodogram frequencies
+    with open(periodogrammetryFileName, 'w', newline='') as csvfile:  # Open file to save data
+        rowWriter = csv.writer(csvfile, delimiter=',')  # Write csv delimited by ","
+        if method == 4:  # If using S-B periodogram
+            rowWriter.writerow(["Frequency", "τ (hrs)", "Chi Squared"])  # Write S-B periodogram title row
+        elif method == 6:  # If using L-S periodogram
+            rowWriter.writerow(["Angular Frequency", "τ (hrs)", "Spectral Density"])  # Write L-S periodogram title row
+        for index in range(0, len(periodogramXVals)):  # For each periodogram x value
+            newLine = [periodogramFrequencies[index], periodogramXVals[index], periodogramYVals[index]]  # Set line to contain frequency, period, and score
+            rowWriter.writerow(newLine)  # Write line to file
 
 
 def saveTubesToFile(setName):
     """Store tubes from image in master tubes list, and save master tubes list to file."""
+
+
     global tubeBounds
     global timeMarkLines
     global bandLines
@@ -1560,12 +1592,13 @@ def saveTubesToFile(setName):
     global tubeLength
     global openFile
 
-    setNamesInFile = []
-    for tube in tubesMaster:
-        setNamesInFile.append(tube["setName"])
-    if setName in setNamesInFile:
-        setName = setName + "_1"
-    setName.replace("%", "")
+
+    setNamesInFile = []  # Blank list for existing set names already in file
+    for tube in tubesMaster:  # For each tube already in file
+        setNamesInFile.append(tube["setName"])  # Add set name for tube to list of set names already in file
+    if setName in setNamesInFile:  # If current set name already in file
+        setName = setName + "_1"  # Add "_1" to set name
+    setName.replace("%", "")  # Delete any % (used as delimiter in file)
     topTubeTimeMarks = []  # Blank list of time mark x values
     for line in timeMarkLines:  # For each line in list of time marks
         if line[2] == 0:  # If line is in current tube
@@ -1616,11 +1649,14 @@ def saveTubesToFile(setName):
 
 def proceedHandler():
     """Handle clicks on proceed button based on analysis state."""
+
+
     global analState
     global tubeBounds
     global markHours
     global timeMarkLines
     global bandLines
+
 
     match analState:  # Based on analysis state
         case 2:  # Analysis state 2 (tube bounds)
@@ -1651,8 +1687,11 @@ def proceedHandler():
 
 def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H
     """Handle uses of multikey hotkeys to perform program functions"""
+
+    
     global keyPresses
 
+    
     match keys:  # Based on list of pressed keys
         case [0, 1, 1, 0, 0, 0, 0]:  # If command, s pressed
             saveExperimentFile()  # Save experiment
@@ -1676,8 +1715,11 @@ def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H
 
 def keyPress(keyPressed):
     """Handle each key press registered by app object."""
+    
+    
     global keyPresses
 
+    
     match [str(keyPressed.key), str(keyPressed.keycode)]:  # Based on key and keycode of key pressed
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 1
@@ -1700,8 +1742,11 @@ def keyPress(keyPressed):
 
 def keyRelease(keyReleased):
     """Handle each key release registered by app object."""
+    
+    
     global keyPresses
 
+    
     match [str(keyReleased.key), str(keyReleased.keycode)]:  # Based on key and keycode of key released
         case ["", "943782142"]:  # Shift
             keyPresses[0] = 0
@@ -1723,6 +1768,7 @@ def keyRelease(keyReleased):
 
 def helpMain():
     """Direct user to main help page/documentation for app."""
+
     
     webbrowser.open(
         "https://github.com/PelhamLab", new=0, autoraise=True
@@ -1731,6 +1777,7 @@ def helpMain():
 
 def invertColor(hex):
     """Invert color given as hex code and return hex code of inverted color."""
+
     
     hex = hex.lstrip('#')
     rgb =  tuple(255 - int(hex[i:i + len(hex) // 3], 16) for i in range(0, len(hex), len(hex)//3))
@@ -1740,10 +1787,13 @@ def invertColor(hex):
 
 def graphicsPreferencesPrompt():
     """Present popup window for changing graphics preferences."""
+
+
     global appParameters
 
-    graphicsPreferencesWindow = Window(app, title="Graphics Preferences", layout="grid", width=375, height=300)
-    graphicsPreferencesWindow.show()
+    
+    graphicsPreferencesWindow = Window(app, title="Graphics Preferences", layout="grid", width=375, height=300)  # Create popup window
+    graphicsPreferencesWindow.show()  # Display popup window
 
     changeGraphColorButton = PushButton(graphicsPreferencesWindow, grid=[0,0], text="Graph Color", height=0, width=20, command=colorPickHandler, args=[0])
     changeGraphColorButton.text_size = 13
@@ -1776,8 +1826,11 @@ def graphicsPreferencesPrompt():
 
 def colorPickHandler(button):
     """Prompt user to pick a new color when a button to change a color preference is clicked."""
+    
+    
     global appParameters
 
+    
     newColor = ""
     match button:
         case 0:
@@ -1801,7 +1854,10 @@ def colorPickHandler(button):
 
 def graphicsPreferencesPromptUpdate(texts):
     """Update graphics preferences window."""
+    
+    
     global appParameters
+    
     
     texts[0].text_color = appParameters["colorGraph"]
     texts[0].value = appParameters["colorGraph"]
@@ -1818,32 +1874,56 @@ def graphicsPreferencesPromptUpdate(texts):
 
 
 def displaySetImagePopup():
+    """Display image for selected set from image data in file."""
+    
+    
     global tubesMaster
-    #global experimentTabTableTextBox
     global experimentTabPlotTubeSelectionSetList
 
-    tubeNumber = -1
+    
+    tubeInSetSelected = None
     for tube in tubesMaster:
         if tube["setName"] == experimentTabPlotTubeSelectionSetList.value:
-            tubeNumber = tube["tubeNumber"]
-            
-    #tubeNumber = 3
-    setName = tubesMaster[tubeNumber]["setName"]
-    imageName = tubesMaster[tubeNumber]["imageName"]
-    imageData = tubesMaster[tubeNumber]["imageData"]
+            tubeInSetSelected = tube
+    
+    setName = tubeInSetSelected["setName"]
+    imageName = tubeInSetSelected["imageName"]
+    imageData = tubeInSetSelected["imageData"]
     imageArray = numpy.array(imageData).astype(numpy.uint8)
-    imageConverted = Image.fromarray(imageArray).convert('RGB')
+    imageConverted = Image.fromarray(numpy.uint8(imageArray), 'L')
     imageThumbnailWindow = Window(app, title="Pack Image: "+setName+" ("+imageName+")", width=1160, height=400)
     imageThumbnailPicture = Drawing(imageThumbnailWindow, width="fill", height="fill")
     imageThumbnailPicture.image(0, 0, imageConverted, 1160, 400)
+    imageThumnnailDownloadButton = PushButton(imageThumbnailWindow, text="Download Image", command=saveImageFromFile, args=[setName, imageConverted])
     imageThumbnailWindow.show()
+
+
+def saveImageFromFile(setName, imageArray):
+    """Save image of selected set to a specified location."""
+
+
+    global workingDir
+    
+
+    fileName = app.select_file(
+            title="Save image as...",
+            folder=workingDir,
+            filetypes=[["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"], ["SVG", "*.svg"]],
+            save=True,
+            filename=(setName + "_image")
+        )
+    imageConverted = Image.fromarray(numpy.uint8(imageArray), 'L')
+    imageConverted.save(fileName)
 
 
 def setupTasksOnOpenAndRun():  # Tasks to run on opening app
     """Tasks to run open opening the application. Reads in local parameters file to get user-defined settings, and preselects home tab."""
+    
+    
     global appParameters
     global workingDir
 
+    
     directoryPath = os.path.dirname(__file__)
     parametersPath = os.path.join(directoryPath, "parameters.txt")
     with open(parametersPath, newline="") as parametersFile:  # Open parameters.txt file
@@ -1865,7 +1945,7 @@ def openAndRun():
 
 
 # Create app object
-app = App(layout="auto", title="Rhythmidia (Alpha)")
+app = App(layout="auto", title="Rhythmidia")
 app.when_closed = sys.exit
 app.width = screenWidth
 app.height = screenHeight
@@ -1889,8 +1969,8 @@ menubar = MenuBar(
             ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
         [["Help 1", helpMain]],
-    ],
-)
+    ]
+)  # Set up os menu bar for application
 
 # Set up navigation tabs
 navigationTabsFrame = Box(
