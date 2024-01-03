@@ -1160,10 +1160,6 @@ def populatePlots():
     for mark in range(0, len(timeMarks) - 1):  # For each pair of time marks
         timeGaps.append((timeMarks[mark + 1] - timeMarks[mark]) / (markHours[mark + 1] - markHours[mark]))  # Add gap between time marks in pixels/hour to list
     meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean growth rate in pixels per hour
-    print("popPlots")
-    print(str(meanGrowthPixelsPerHour))
-    print(str(timeGaps))
-    print(str(len(timeMarks)))
     meanGrowthHoursPerPixel = 1 / meanGrowthPixelsPerHour  # Mean growth rate in hours per pixel
     densitometryXValsHours = []  # Blank list for densitometry x axis values in hours
     for xPixel in densitometryXValsRaw:  # For each pixel x value in densitometry x axis
@@ -1963,6 +1959,25 @@ def timeMarkTableScroll(direction):
         timeMarkTableRows[shownStatusString.rindex("T")].hide()
 
 
+def closeExperimentFile():
+    global openFile
+    global tubesMaster
+    global plotsInfo
+
+    openFile = ""
+    cancelImageAnalysis()
+    tubesMaster = []
+    plotsInfo = []
+    if canvas is not None:
+        canvas.get_tk_widget().pack_forget()  # Clear plot canvas
+    experimentTabTableTextBox.value = ""
+    experimentTabStatisticalAnalysisSetList.clear()
+    experimentTabStatisticalAnalysisTubeList.clear()
+    experimentTabPlotTubeSelectionSetList.clear()
+    experimentTabPlotTubeSelectionTubeList.clear()
+    experimentTabStatisticalAnalysisOutputTextBox.value = ""
+
+
 def setupTasksOnOpenAndRun():  # Tasks to run on opening app
     """Tasks to run open opening the application. Reads in local parameters file to get user-defined settings, and preselects home tab."""
     
@@ -2010,6 +2025,7 @@ menubar = MenuBar(
     options=[
         [
             ["Open Experiment                (⌘O)", openExperimentFile],
+            ["Close Experiment File              ", closeExperimentFile],
             ["Save Experiment                (⌘S)", saveExperimentFile],
             ["Save Experiment As...    (\u2191⌘S)", saveExperimentFileAs],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
