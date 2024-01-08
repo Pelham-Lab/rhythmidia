@@ -551,7 +551,7 @@ def identifyTimeMarks():
             peakY = (tube[peakIndex][0] + (tube[peakIndex][1] - tube[peakIndex][0]) / 2)  # Set y to midline of tube at x
             slopesLeft = []  # Blank list of slopes left of peak
             slopesRight = []  # Blank list of slopes right of peak
-            for xWalk in range(2, 12, 2):  # For each x to one side or the other of peak
+            for xWalk in range(2, 8, 2):  # For each x to one side or the other of peak
                 if peakX + xWalk < 1160:  # If xWalk to the right is within image
                     slopesRight.append(abs((densityProfileSmooth[peakX + xWalk] - densityProfileSmooth[peakX + xWalk - 2])) / 2)  # Add granular slope to list of slopes
                 if peakX - xWalk > 0:  # If xWalk to the left is within image
@@ -1489,7 +1489,7 @@ def saveDensitometryData():
     
 
     setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list 
-    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1  # Get tube number from selected tube name in tube list
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
     densitometryFileName = app.select_file(
         title="Save densitometry as...",
         folder=workingDir,
@@ -1545,7 +1545,7 @@ def savePeriodogramData():
 
 
     setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list
-    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1  # Get tube number from selected tube name in tube list
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
     method = experimentTabPlotTubeSelectionMethodList.value  # Get method from selection in method list
     periodogrammetryFileName = app.select_file(
         title="Save densitometry as...",
@@ -1957,6 +1957,9 @@ def timeMarkTableScroll(direction):
     elif direction == "down" and shownStatusString[1] == "F":
         timeMarkTableRows[shownStatusString.index("T")-1].show()
         timeMarkTableRows[shownStatusString.rindex("T")].hide()
+    app.update()  # Update app object
+    homeTabFrame.focus()  # Focus new frame
+    homeTab.focus()
 
 
 def closeExperimentFile():
