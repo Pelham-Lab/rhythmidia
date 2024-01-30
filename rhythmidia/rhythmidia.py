@@ -59,7 +59,7 @@ bandLines = []  # Locations of conidial bands in form [x, ycenter, tube]
 densityProfiles = []  # Density profiles of tubes in b/w image format
 tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densityProfile, growthRate, tubeRange, timeMarks, bandMarks]
 canvas = None  # Plot entity
-keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Shift, Command/Control, S, O, P, D, H
+keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Shift, Command/Control, S, O, P, D, H, C
 plotImageArray = None
 
 
@@ -1664,32 +1664,35 @@ def proceedHandler():
             saveTubesToFileButton.enable()  # Enable save tubes button
 
 
-def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H
+def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H, C
     """Handle uses of multikey hotkeys to perform program functions"""
 
     
     global keyPresses
 
-    
+    print(str(keys))
     match keys:  # Based on list of pressed keys
-        case [0, 1, 1, 0, 0, 0, 0]:  # If command, s pressed
+        case [0, 1, 1, 0, 0, 0, 0, 0]:  # If command, s pressed
             saveExperimentFile()  # Save experiment
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
-        case [1, 1, 1, 0, 0, 0, 0]:  # If shift, command, s pressed
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [1, 1, 1, 0, 0, 0, 0, 0]:  # If shift, command, s pressed
             saveExperimentFileAs()  # Save as
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
-        case [0, 1, 0, 1, 0, 0, 0]:  # If command, o pressed
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [0, 1, 0, 1, 0, 0, 0, 0]:  # If command, o pressed
             openExperimentFile()  # Open experiment file
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
-        case [0, 1, 0, 0, 0, 1, 0]:  # If command, d pressed
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [0, 1, 0, 0, 0, 1, 0, 0]:  # If command, d pressed
             setWorkingDirectory()  # Set working directory
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
-        case [0, 1, 0, 0, 0, 0, 1]:  # If command, h pressed
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [0, 1, 0, 0, 0, 0, 1, 0]:  # If command, h pressed
             helpMain()  # Open main help page
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
-        case [0, 1, 0, 0, 1, 0, 0]:  # If command, p pressed
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [0, 1, 0, 0, 1, 0, 0, 0]:  # If command, p pressed
             graphicsPreferencesPrompt()  # Open graphics settings
-            keyPresses = [0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
+        case [0, 1, 0, 0, 0, 0, 0, 1]:  # If command, p pressed
+            closeExperimentFile()  # Open graphics settings
+            keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Reset key press list
 
 
 def keyPress(keyPressed):
@@ -1716,6 +1719,8 @@ def keyPress(keyPressed):
             keyPresses[5] = 1
         case ["h", "67108968"] | ["H", "71303240"]:  # H
             keyPresses[6] = 1
+        case ['c', '134217827'] | ['C', '138412099']:  # C
+            keyPresses[7] = 1
     keyBindHandler(keyPresses)
 
 
@@ -1743,6 +1748,8 @@ def keyRelease(keyReleased):
             keyPresses[5] = 0
         case ["h", "67108968"] | ["H", "71303240"]:  # H
             keyPresses[6] = 0
+        case ['c', '134217827'] | ['C', '138412099']:  # C
+            keyPresses[7] = 1
 
 
 def helpMain():
@@ -1981,7 +1988,7 @@ menubar = MenuBar(
     options=[
         [
             ["Open Experiment                (⌘O)", openExperimentFile],
-            ["Close Experiment File              ", closeExperimentFile],
+            ["Close Experiment File          (⌘C)", closeExperimentFile],
             ["Save Experiment                (⌘S)", saveExperimentFile],
             ["Save Experiment As...    (\u2191⌘S)", saveExperimentFileAs],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
