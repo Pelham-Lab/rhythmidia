@@ -995,13 +995,13 @@ def populateExperimentDataTable():
             "(Manual)",
             "(Sokolove-Bushell)",
             "(Lomb-Scargle)",
-            "(CWT)",
+            "(Wavelet)",
             "(hrs/hr)",
             "(mm/hr)"
         ],
         ["", "", "", "", "", "", "", "", ""]
     ]  # Populate table rows with headers and a blank row
-    maxColumnLengths = [8, 7, 9, 11, 21, 17, 9, 12, 13]  # Set maximum lengths of columns for spacing; 3 spaces between columns
+    maxColumnLengths = [8, 7, 9, 11, 21, 17, 12, 12, 13]  # Set maximum lengths of columns for spacing; 3 spaces between columns
     maxTimeMarksLength = 0  # Blank variable for most time marks in a tube in file
     for tube in tubesMaster:  # For each tube in master tubes list
         if len(tube["timeMarks"]) > maxTimeMarksLength:  # If the tube contains more time marks than the current max
@@ -1103,9 +1103,9 @@ def performStatisticalAnalysis():
 
     # Get selected tubes and method from list boxes
     tubesSelected = experimentTabStatisticalAnalysisTubeList.value  # Set list of selected tubes from options list
-    method = "period" + experimentTabStatisticalAnalysisMethodList.value.replace("-", "")
+    method = "period" + experimentTabStatisticalAnalysisMethodList.value.replace("-", "").replace(" (CWT)", "")
     isWavelet = False
-    if experimentTabStatisticalAnalysisMethodList.value == "Wavelet":
+    if experimentTabStatisticalAnalysisMethodList.value == "Wavelet (CWT)":
         isWavelet = True
     maxTimeMarksLength = 0
     for tube in tubesMaster:
@@ -1192,7 +1192,7 @@ def populatePlots():
             method = ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]  # Set method to SB
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]  # Set method to LS
-        case "Wavelet":  # If method is wavelet
+        case "Wavelet (CWT)":  # If method is wavelet
             method = ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]
     tubesSelected = experimentTabPlotTubeSelectionTubeList.value  # Set selected tube name to value from list box
     tubeToPlot = []  # Empty list for data of selected tube
@@ -1500,7 +1500,7 @@ def savePeriodogramData():
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
-        filename=(setName + "_tube" + str(tubeNumber) + "_" + method + "_data"),
+        filename=(setName + "_tube" + str(tubeNumber) + "_" + method.strip() + "_data"),
     )  # Get file name and save location from user input from app popup
     method = None  # Initialize method variable
     match experimentTabPlotTubeSelectionMethodList.value:  # Based on plot method selected
@@ -1508,7 +1508,7 @@ def savePeriodogramData():
             method = ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]  # Set method to 4 for index in period data
         case "Lomb-Scargle":  # If method is Lomb-Scargle
             method = ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]  # Set method to 6 for index in period data
-        case "Wavelet":  # If method is wavelet
+        case "Wavelet (CWT)":  # If method is wavelet
             method = ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]
     tubeToPlot = []  # Blank list for tube data of tube to plot
     for tube in tubesMaster:  # For each tube in global master tubes list
@@ -2197,7 +2197,7 @@ experimentTabStatisticalAnalysisMethodList = ListBox(
     width=120,
     height="fill",
     align="top",
-    items=["Manual", "Sokolove-Bushell", "Lomb-Scargle", "Wavelet"],
+    items=["Manual", "Sokolove-Bushell", "Lomb-Scargle", "Wavelet (CWT)"],
     selected="Manual",
 )
 experimentTabStatisticalAnalysisButtonsFrame = Box(experimentTabStatisticalAnalysisFrame, height="fill", align="right")
@@ -2249,7 +2249,7 @@ experimentTabPlotTubeSelectionMethodList = ListBox(
     width=120,
     height="fill",
     align="top",
-    items=["Sokolove-Bushell", "Lomb-Scargle", "Wavelet"],
+    items=["Sokolove-Bushell", "Lomb-Scargle", "Wavelet (CWT)"],
     selected="Sokolove-Bushell"
 )
 experimentTabPlotTubeSelectionButtonsFrame = Box(experimentTabPlotTubeSelectionFrame)
