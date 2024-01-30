@@ -1273,9 +1273,8 @@ def populatePlots():
         numpy.min(densitometryYVals), 
         numpy.max(densitometryYVals), 
         colors=appParameters["colorBand"], 
-        label="Bands"
+        label="Band Peaks"
     )  # Set densitometry plot vertical lines for band marks
-    tubeDoubleFigurePlots[0].grid()  # Set grid for densitometry plot
     tubeDoubleFigurePlots[0].legend(ncol=1, loc="upper right", fontsize="small", bbox_to_anchor=(1.3, 1))  # Set legend for densitometry plot
     if method == ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]:  # If using S-B periodogram
         tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Chi Squared", color=appParameters["colorGraph"])  # Create second plot of S-B periodogram
@@ -1298,10 +1297,8 @@ def populatePlots():
         )  # Set labels for periodogram plot
     if method == ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]:  # If using S-B periodogram
         tubeDoubleFigurePlots[1].set(ylabel="Chi Squared")  # Set y label for S-B periodogram
-        tubeDoubleFigurePlots[1].grid()  # Set grid for periodogram plot
     elif method == ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]:  # If using L-S periodogram
         tubeDoubleFigurePlots[1].set(ylabel="Spectral Density")  # Set y label for L-S periodogram
-        tubeDoubleFigurePlots[1].grid()  # Set grid for periodogram plot
     else:  # If using wavelet method
         tubeDoubleFigurePlots[1].set(ylabel="Period (hrs)")
     if method != ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
@@ -1432,8 +1429,10 @@ def savePlot():
             filetypes=[["SVG", "*.svg"], ["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"]],
             save=True,
             filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber),
-        )  # Get file name and save location from user via app popup    
-        plotImageArray.savefig(plotFileName)
+        )  # Get file name and save location from user via app popup
+        newFigure = copy.deepcopy(plotImageArray)
+        newFigure.set_dpi(1200)
+        newFigure.savefig(plotFileName, dpi=1200)
 
 
 def saveDensitometryData():
@@ -1672,7 +1671,7 @@ def keyBindHandler(keys):  # Shift, Command/Ctrl, S, O, P, D, H, C
     
     global keyPresses
 
-    print(str(keys))
+    
     match keys:  # Based on list of pressed keys
         case [0, 1, 1, 0, 0, 0, 0, 0]:  # If command, s pressed
             saveExperimentFile()  # Save experiment
