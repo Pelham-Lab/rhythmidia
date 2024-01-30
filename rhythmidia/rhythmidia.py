@@ -384,7 +384,7 @@ def identifyHorizontalLines():
         horizontalLines.append([horizontalLineSlopes[line], horizontalLineIntercepts[line]])  # Add slope and intercept combination of line to accepted horizontal lines
     
     #Wrap up
-    drawLines()  # Add lines to image
+    drawLines(True)  # Add lines to image
     analState = 2  # Set analysis state to 2
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove race tube boundary lines. Please be sure to include lines a very top and bottom of image. When satisfied, click the Proceed button."  # Set console text to horizontal line instructions
 
@@ -565,7 +565,7 @@ def identifyTimeMarks():
     analState = 4  # Set analysis state to 4
     contraster = ImageEnhance.Contrast(finalImage.convert("L"))  # Define contraster of numpy array of greyscale final image
     editedImage = numpy.invert(numpy.array(contraster.enhance(3)))  # Set numpy image array to contrast level 3
-    drawLines()  # Add lines to image
+    drawLines(True)  # Add lines to image
     
     # Commence identification of time marks
     for tube in tubeBounds:  # For each tube in tubeBounds
@@ -573,7 +573,7 @@ def identifyTimeMarks():
         timeMarkLinesTube = _identifyTimeMarks(editedImage, tube, tubeBounds, tubeNumber)
         for line in timeMarkLinesTube:
             timeMarkLines.append(line)
-    drawLines()  # Add lines to image
+    drawLines(True)  # Add lines to image
     analState = 5  # Set analysis state to 5
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove time marks. When satisfied, click the Proceed button."  # Add directions to console
 
@@ -663,7 +663,7 @@ def identifyBanding():
     contraster = ImageEnhance.Contrast(finalImage.convert("L"))  # Define contraster of numpy array of greyscale final image
     editedImage = numpy.array(contraster.enhance(3))  # Set numpy image array to contrast level 3
     originalImage = numpy.array(finalImage.convert("L"))  # Set numpy image array for precontrast ('original') image
-    drawLines()  # Add lines to image
+    drawLines(False)  # Add lines to image
     
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
@@ -674,7 +674,7 @@ def identifyBanding():
         for line in bandLinesTube:
             bandLines.append(line)
         
-    drawLines()  # Draw lines
+    drawLines(False)  # Draw lines
     analState = 7  # Set analysis state to 7
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove bands. Remove erroneously identified bands from any non-banding tubes. When satisfied, click the Proceed button."  # Update console text
 
@@ -711,7 +711,7 @@ def _identifyBanding(image, tube, tubeBounds, tubeNumber, timeMarkLines):
     return bandLines
 
 
-def drawLines():
+def drawLines(drawTimeMarkLines):
     """Redraw image along with current accepted horizontal and vertical lines for time and band marks."""
 
 
@@ -735,15 +735,16 @@ def drawLines():
             color=appParameters["colorHoriz"], 
             width=2
         )  # Draw the horizontal line #RIGHTHERE
-    for line in timeMarkLines:  # For each time mark
-        homeTabRaceTubeImageObject.line(
-            line[0],
-            line[1] - (meanTubeWidth / 2 - 5),
-            line[0],
-            line[1] + (meanTubeWidth / 2 - 5),
-            color=appParameters["colorVert"],
-            width=2,
-        )  # Draw the time mark line
+    if drawTimeMarkLines:
+        for line in timeMarkLines:  # For each time mark
+            homeTabRaceTubeImageObject.line(
+                line[0],
+                line[1] - (meanTubeWidth / 2 - 5),
+                line[0],
+                line[1] + (meanTubeWidth / 2 - 5),
+                color=appParameters["colorVert"],
+                width=2,
+            )  # Draw the time mark line
     for line in bandLines:  # For each band
         homeTabRaceTubeImageObject.line(
             line[0],
@@ -779,7 +780,7 @@ def imageClickHandler(mouseClick):
                 horizontalLines.append([meanTubeSlope, newLineIntercept])  # Add new line to list of horizontal lines
             else:  # If a line is targeted by click
                 horizontalLines.pop(targetLineIndex)  # Delete that line
-            drawLines()  # Add lines to image
+            drawLines(True)  # Add lines to image
         case 5:  # Analysis state 5 (time marks)
             targetLineIndex = -1  # Set target to -1
             for line in timeMarkLines:  # For each time mark line
@@ -795,7 +796,7 @@ def imageClickHandler(mouseClick):
                 timeMarkLines.append([newMarkX, newMarkY, newMarkTubeNumber])  # Add new line to list of time mark lines
             else:  # If a line is targeted by click
                 timeMarkLines.pop(targetLineIndex)  # Delete that line
-            drawLines()  # Add lines to image
+            drawLines(True)  # Add lines to image
         case 7:  # Analysis state 7 (band locations)
             targetLineIndex = -1  # Set target to -1
             for line in bandLines:  # For each band line
@@ -811,7 +812,7 @@ def imageClickHandler(mouseClick):
                 bandLines.append([newBandX, newBandY, newBandTubeNumber])  # Add new line to list of band lines
             else:  # If a line is targeted by click
                 bandLines.pop(targetLineIndex)  # Delete that line
-            drawLines()  # Add lines to image
+            drawLines(False)  # Add lines to image
 
 
 def getTimeMarkTableData():
@@ -1643,6 +1644,7 @@ def proceedHandler():
         case 5:  # Analysis state 5 (time marks)
             identifyBanding()
         case 7:  # Analysis state 7 (band locations)
+            drawLines(True)
             analState = 8  # Set analysis state to 8
             for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
                 tubeRange = tubeBounds[tube]  # Y bounds of tube
@@ -1835,7 +1837,7 @@ def colorPickHandler(button):
             newColor = app.select_color(color=appParameters["colorBand"])
             appParameters["colorBand"] = newColor
             updateAppParameters()
-    drawLines()
+    drawLines(True)
 
 
 def graphicsPreferencesPromptUpdate(texts):
@@ -1990,7 +1992,7 @@ menubar = MenuBar(
             ["Open Experiment                (⌘O)", openExperimentFile],
             ["Close Experiment File          (⌘C)", closeExperimentFile],
             ["Save Experiment                (⌘S)", saveExperimentFile],
-            ["Save Experiment As...    (\u2191⌘S)", saveExperimentFileAs],
+            ["Save Experiment As...         (\u2191⌘S)", saveExperimentFileAs],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
             ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
