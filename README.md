@@ -8,21 +8,31 @@ Rhythmidia
 
 ### Race tube image analysis and Neurospora crassa circadian period elucidation in Python. (Rest of blurb here)
 ==============================
-## Installation instructions pending.
+## Installation and Program Launch
+1. Download the rhythmidia-CWT.zip file and move it to your Documents folder (or location of choice)
+2. Unzip rhythmidia-CWT.zip
+    a. This will create the folder rhythmidia-CWT
+3. Open the Terminal application on Mac
+4. Navigate to the rhythmidia-CWT folder in Terminal
+5. Run the command pip install .
+6. To run Rhythmidia, run the command '''python -c "import rhythmidia; rhythmidia.openAndRun()"'''
+
 ==============================
-## Race Tube Images
+## Preprocessing of Race Tube Images
 1. Crop your scanned race tube image as desired, leaving some background on either edge
 2. No need to make your image greyscale, fix its rotation, or increase contrast- Rhythmidia will take care of all of this internally!
 3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
-## Rhythmidia out of the Box
-1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default get race tube images and to which the program will by default save data<br />
+## Rhythmidia Right Out of the Box
+1. The first time you open a new installation of the program, you will be prompted to select a working directory from which the program will by default look for race tube images and to which the program will by default save data<br />
     a. This can be changed later at any time.<br />
     b. You are not restricted to using this directory, it is purely for your convenience<br />
+    c. This is where analysis data will be exported by default<br />
 2. That’s it! You can start analyzing images immediately.
 
 ## Uploading and Analyzing an Image
 1. Upon opening the software, you will be greeted with the “Home” tab, which will look like this:
+![Home Tab (blank)](screenshots/HomeTabBlank.png)
 2. If you want to add tubes to an existing experiment file, go to File -> Open experiment File (or press ⌘O)
     a. If you want to start from scratch, you can skip this step
 3. To upload a new race tube image, click the button labeled “Upload Race Tube Image”<br />
