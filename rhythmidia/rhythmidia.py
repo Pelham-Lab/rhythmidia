@@ -1133,9 +1133,9 @@ def performStatisticalAnalysis():
     
     # Calculate mean, standard deviation, and standard error of means and display them
     meanPeriod = numpy.mean(selectedPeriods)  # Calculate mean of selected periods
-    meanSlope = "N/A"
+    meanSlope = ""
     if isWavelet:
-        meanSlope = str(round(numpy.mean(selectedSlopes), 3)) + " hrs/hr"
+        meanSlope = "Slope:\n" + str(round(numpy.mean(selectedSlopes), 3)) + " hrs/hr\n\n"
     standardDeviation = numpy.std(selectedPeriods)  # Calculate standard deviation of selected periods
     standardErrorOfMeans = standardDeviation / numpy.sqrt(len(selectedPeriods))  # Calculate standard error of selected periods
     experimentTabStatisticalAnalysisOutputTextBox.value = (
@@ -1146,9 +1146,9 @@ def performStatisticalAnalysis():
         + experimentTabStatisticalAnalysisMethodList.value
         + "):\n"
         + str(round(meanPeriod, 3))
-        + " hrs\n\nSlope (for CWT only):\n"
+        + " hrs\n\n"
         + str(meanSlope)
-        + "\n\nStandard\nDeviation:\n"
+        + "Standard\nDeviation:\n"
         + str(round(standardDeviation, 3))
         + "\n\nStandard Error\nof Means:\n"
         + str(round(standardErrorOfMeans, 3))
