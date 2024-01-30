@@ -19,7 +19,7 @@ Rhythmidia
 
 ==============================
 ## Preprocessing of Race Tube Images
-1. Crop your scanned race tube image as desired, leaving some background on either edge
+1. Crop your scanned race tube image as desired, leaving a small amount of background on either long edge
 2. No need to make your image greyscale, fix its rotation, or increase contrast- Rhythmidia will take care of all of this internally!
 3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
@@ -39,42 +39,59 @@ Rhythmidia
     a. Your image will appear in the center of the screen<br />
     ![Image Analysis](screenshots/ImageAnal1.png)
     b. Uploading an image enables the options to rotate and to lock & analyze your image<br />
+    ![Image Adjustment Buttons](screenshots/ImageChangeButtons.png)
 3. Rotate your image so that the growth direction of the tubes is from left to right across your screen<br />
     a. To rotate your image 90 degrees clockwise, click the button labeled “Rotate”<br />
 4. When you are satisfied with your image’s orientation, click the button labeled “Lock & Analyze Image”
 5. Rhythmidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes.
+    a. One line between each two tubes.
+![Horizontal Line Identification](screenshots/ImageAnal2.png)
 6. You will be directed to verify these lines:<br />
     a. To remove an incorrect line, simply click on the line<br />
     b. To add a missing line, simply click in an unoccupied position on the image<br />
-7. When you are satisfied with the positions of all lines, click the button labeled “Proceed”
+7. When you are satisfied with the positions of all tube demarcation lines, click the button labeled “Proceed”
 8. Repeat steps 6-8 for time marks (red) and for bands (orange)<br />
-9. At any time before saving tubes to file, you may click the button labeled “Cancel image analysis”, which will reset the image analysis process and remove your uploaded image, while leaving open any open experiment file
-10. After you are satisfied with the positions of bands and click “Proceed”, you will be able to see a preliminary calculation of the period of each tube below
-11. You will now have the option to click the button labeled “Save Tubes to File”<br />
+![Time Mark Identification](screenshots/ImageAnal3.png)
+![Banding Identification](screenshots/ImageAnal5.png)
+    NOTE: At any time before saving tubes to file, you may click the button labeled “Cancel image analysis”, which will reset the image analysis process and remove your uploaded image, while leaving open any open experiment file
+    NOTE: Be certain to record any differences in marking times in the mark sheet (left) before proceeding further.
+9. After you are satisfied with the positions of bands and click “Proceed”, you will be able to see a preliminary calculation of the period of each tube below
+![Preliminary Data](screenshots/ImageAnal6.png)
+10. You will now have the option to click the button labeled “Save Tubes to File”<br />
     a.  This will bring up a popup asking for a name for the pack of tubes in the current image before it saves them to file<br />
+    ![Pack Name Prompt](screenshots/PackName.png)
     b. If you are working within an existing experiment file, this will simply add this pack to the file and update it<br />
     c. Otherwise, you will be prompted to Save As a new experiment file for these tubes<br />
 
 ## The Experiment Tab
 1. Whether opening an existing experiment file or working from a new pack image, granular experiment data, plots, and statistical analysis data are located on the Experiment tab
+![Experiment Tab](screenshots/ExperimentTabBlank.png)
 2. Experiment data (Entry, Pack, Tube # in pack, Period calculated 3 ways, Growth rate) is located in the table in the top left
+![Banding Identification](screenshots/ExperimentTab1.png)
+![Banding Identification](screenshots/ExperimentTab2.png)
 3. In the top right is the frame for statistical analysis of any number of tubes:<br />
+![Manual Statistical Analysis](screenshots/WaveletStatAnal.png)
+![CWT Statistical Analysis](screenshots/ManualStatAnal.png)
     a. Select packs, tubes, and a method of period analysis in the 3 lists<br />
     b. To select multiple packs or tubes, use control-click<br />
     c. Click the button labeled “Analyze” to generate mean period, standard deviation, and standard error<br />
     d. Click the button labeled “Export Data” to export a csv of the data for each tube selected<br />
     e. Click the button labeled “Export Analysis” to export a csv of the analysis of the selected tubes<br />
 4. In the bottom half is the plot frame for plotting densitometry and a periodogram of a single tube:<br />
+![Sokolove-Bushell Periodogram](screenshots/SokoloveBushellPlot.png)
+![Lomb-Scargle Periodogram](screenshots/LombScarglePlot.png)
+![CWT Heatmap](screenshots/WaveletPlot.png)
     a. Select pack, tube, and type of periodogram in the 3 lists<br />
     b. Click the button labeled “Plot” to generate a densitogram and periodogram of the selected plot<br />
-    c. Click the button labeled “Save Densitogram” to save a .png of the densitogram<br />
-    d. Click the button labeled “Save Periodogram” to save a .png of the periodogram<br />
-    e. Click the button labeled “Save Densitometry” to save a .csv of the densitometry data<br />
-    f. Click the button labeled “Save Periodogrammetry” to save a .csv of the periodogrammetry data<br />
+    c. Click the button labeled “Save Plot” to save an image of the dual plot<br />
+    d. Click the button labeled “Save Densitometry” to save a .csv of the densitometry data<br />
+    e. Click the button labeled “Save Periodogrammetry” to save a .csv of the periodogrammetry data<br />
 5. At the bottom left is a button labeled "Display Pack Image". This button will display a popup window containing the greyscale version of the image corresponding to whichever pack is selected in the bottom left list.
+![Image Popup](screenshots/DisplayImagePopup.png)
 
 ## Functions Overview
 Open Experiment File      (⌘O)<br />
+Close Experiment File     (⌘C)<br />
 Save File                 (⌘S)<br />
 Save as…                 (↑⌘S)<br />
 Set working directory     (⌘D)<br />
