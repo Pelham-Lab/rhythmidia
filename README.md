@@ -16,10 +16,13 @@ Rhythmidia
 4. Navigate to the rhythmidia-CWT folder in Terminal
 5. Run the command pip install .
 6. To run Rhythmidia, run the command '''python -c "import rhythmidia; rhythmidia.openAndRun()"'''
+    NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
 
 ==============================
 ## Preprocessing of Race Tube Images
 1. Crop your scanned race tube image as desired, leaving a small amount of background on either long edge
+    GOOD: 
+    BAD: 
 2. No need to make your image greyscale, fix its rotation, or increase contrast- Rhythmidia will take care of all of this internally!
 3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
@@ -29,6 +32,7 @@ Rhythmidia
     b. You are not restricted to using this directory, it is purely for your convenience<br />
     c. This is where analysis data will be exported by default<br />
 2. That’s it! You can start analyzing images immediately.
+    NOTE: On some newer Mac laptops with variable-force-click trackpads, you may find that some clicks are not picked up effectively unless you click with full force.
 
 ## Uploading and Analyzing an Image
 1. Upon opening the software, you will be greeted with the “Home” tab, which will look like this:
