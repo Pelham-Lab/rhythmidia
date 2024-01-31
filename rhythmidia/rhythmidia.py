@@ -971,6 +971,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
 
 def populateExperimentDataTable():
     """Populate experiment data table."""
+    
+    
     global tubesMaster
     global experimentTabTableTextBox
     global experimentTabTableParamsHrsLowDropdown
@@ -1042,6 +1044,68 @@ def populateExperimentDataTable():
             tableText = tableText + row[col] + " " * (maxColumnLengths[col] - len(row[col]))  # Append column and spacing to table text
         tableText = tableText + "\n"  # Append newline to table text
     experimentTabTableTextBox.value = tableText  # Set experiment table text box value to text string
+
+
+def saveExperimentData():
+    global tubesMaster
+    global openFile
+    global app
+    global experimentTabTableParamsHrsLowDropdown
+    global experimentTabTableParamsHrsHighDropdown
+
+    dataFileName = app.select_file(
+        title="Save data as...",
+        folder=workingDir,
+        filetypes=[["CSV", "*.csv"]],
+        save=True,
+        filename=(openFile[openFile.rindex("/")+1:-5] + "_data"),
+    )  # Get file name and file save location from user input from app popup
+    
+    tableRows = [
+        [
+            "Entry",
+            "Pack",
+            "Tube #",
+            "Period (Manual)",
+            "Period (Sokolove-Bushell)",
+            "Period (Lomb-Scargle)",
+            "Period (Wavelet/CWT)",
+            "CWT Slope (hrs/hr)",
+            "Growth Rate (mm/hr)"
+        ]
+    ]  # Populate table rows with headers and a blank row
+    maxTimeMarksLength = 0  # Blank variable for most time marks in a tube in file
+    for tube in tubesMaster:  # For each tube in master tubes list
+        if len(tube["timeMarks"]) > maxTimeMarksLength:  # If the tube contains more time marks than the current max
+            maxTimeMarksLength = len(tube["timeMarks"])
+    totalMarkHours = tubesMaster[0]["markHours"][:maxTimeMarksLength]
+    if experimentTabTableParamsHrsLowDropdown.value == "" and experimentTabTableParamsHrsHighDropdown.value == "":
+        for time in totalMarkHours:
+            experimentTabTableParamsHrsLowDropdown.append(time)
+            experimentTabTableParamsHrsHighDropdown.append(time)
+        experimentTabTableParamsHrsLowDropdown.value = str(totalMarkHours[0])
+        experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[-1])
+    if float(experimentTabTableParamsHrsHighDropdown.value) <= float(experimentTabTableParamsHrsLowDropdown.value):
+            experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[totalMarkHours.index(float(experimentTabTableParamsHrsLowDropdown.value))+1])
+    for tube in tubesMaster:  # For each tube in master tube list
+        tubePeriods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))  # Calculate periods and periodograms for current tube
+        tableRows.append(
+            [
+                "  " + str(tubesMaster.index(tube) + 1),
+                str(tube["setName"]),
+                "  " + str(tube["tubeNumber"] + 1),
+                str(round(tubePeriods["periodManual"], 3)) + " hrs",
+                str(round(tubePeriods["periodSokoloveBushell"], 3)) + " hrs",
+                str(round(tubePeriods["periodLombScargle"], 3)) + " hrs",
+                str(round(tubePeriods["periodWavelet"], 3)) + " hrs",
+                str(round(tubePeriods["slopeWavelet"], 3)),
+                str(tube["growthRate"])
+            ]
+        )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
+    with open(dataFileName, 'w', newline='') as csvfile:  # Open csv file
+        rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+        for row in tableRows:
+            rowWriter.writerow(row)  # Write row to file
 
 
 def populateStatisticalAnalysisLists():
@@ -2208,6 +2272,9 @@ experimentTabStatisticalAnalysisAnalyzeButton.font = "Arial bold"
 experimentTabStatisticalAnalysisExportDataButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Save\nPeriods and\nAnalysis\nData", width="fill", pady=2, command=saveStatisticalAnalysisData, align="top")
 experimentTabStatisticalAnalysisExportDataButton.text_size = 13
 experimentTabStatisticalAnalysisExportDataButton.font = "Arial bold"
+experimentTabTableExportDataButton = PushButton(experimentTabStatisticalAnalysisButtonsFrame, text="Save\nExperiment\nData", width="fill", pady=2, command=saveExperimentData, align="top")
+experimentTabTableExportDataButton.text_size = 13
+experimentTabTableExportDataButton.font = "Arial bold"
 experimentTabStatisticalAnalysisOutputFrame = Box(experimentTabStatisticalAnalysisFrame, width="fill", height="fill", align="right")
 experimentTabStatisticalAnalysisOutputTitle = Text(experimentTabStatisticalAnalysisOutputFrame, text="\n\nStatistical Analysis:", align="top", font="Arial bold")
 experimentTabStatisticalAnalysisOutputTextBox = TextBox(experimentTabStatisticalAnalysisOutputFrame, multiline=True, width=20, height=18, align="top")
