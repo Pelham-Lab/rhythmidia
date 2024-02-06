@@ -114,14 +114,14 @@ def openExperimentFile(reopen=False):
     with open(openFile, newline="") as experimentFile:  # Open user-specified txt experiment file
         tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %; generates iterable of all race tube datasets in specified experiment file
         for tube in tubesInFile:  # For each line of experiment file (each containing one race tube's data)
-            parsedTube = _parseTubeFromFile(tube)
+            parsedTube = parseTubeFromFile(tube)
             tubesMaster.append(parsedTube)  # Add parsed race tube data dictionary to global master list of tubes
     populateExperimentDataTable()  # Populate experiment data table
     populateStatisticalAnalysisLists()  # Populate statistical analysis frame lists
     populatePlotTubeSelectionLists()  # Populate plot data frame lists
 
 
-def _parseTubeFromFile(tube):
+def parseTubeFromFile(tube):
     
     parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank dictionary for parsed tube containing all requisite keys
     parsedTube["setName"] = str(tube[0]) # Set name (or pack name) string is first element of line
@@ -333,7 +333,7 @@ def cancelImageAnalysis():
     homeTabRaceTubeImageObject.clear()  # Clear image frame
     rawImage, rightImage, finalImage = None, None, None  # Zero out image variables
     imageName = ""  # Zero out current image name
-    prelimContents = [["Preliminary Period Data", "", ""], ["Tube", "# Marks", "Average Manual Period (hrs)"]]  # Reset preliminary data contents to headers
+    prelimContents = [["Preliminary Period Data", "", ""], ["Tube", "# Marks", "Average Linear Regression Period (hrs)"]]  # Reset preliminary data contents to headers
     homeTabPreliminaryDataAnalysisTextBox.value = ""  # Zero out preliminary data text box
     tubeLength = -1  # Zero out tube length
     tubeBounds = []  # Zero out tube boundaries list
@@ -376,7 +376,7 @@ def identifyHorizontalLines():
     analState = 1  # Set analysis state to 1
     editedImage = numpy.array(finalImage.convert("L"))  # Create numpy array of final image in greyscale
     
-    horizontalLineSlopes, horizontalLineIntercepts, meanTubeSlope = _identifyHorizontalLines(editedImage)
+    horizontalLineSlopes, horizontalLineIntercepts, meanTubeSlope = qIdentifyHorizontalLines(editedImage)
     
     horizontalLines = []  # Blank global list of horizontal tube boundary lines
     # Populate global horizontal lines list
@@ -389,7 +389,7 @@ def identifyHorizontalLines():
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove race tube boundary lines. Please be sure to include lines a very top and bottom of image. When satisfied, click the Proceed button."  # Set console text to horizontal line instructions
 
 
-def _identifyHorizontalLines(image):
+def qIdentifyHorizontalLines(image):
     
     # Horizontal line ID method 1 - this method works best on images with less clearly defined tubes with some dark spots in low banding areas
     # Get vertical brightness profiles for left and right of image
@@ -521,6 +521,7 @@ def identifyRaceTubeBounds():
     global horizontalLines
     global meanTubeWidth
     global prelimContents
+    global tubeBounds
 
 
     analState = 3  # Set analysis state to 3
@@ -529,12 +530,12 @@ def identifyRaceTubeBounds():
     updatePreliminaryDataDisplay()  # Update preliminary contents text box with new contents
     homeTabConsoleTextBox.value = ("Identifying race tube regions...")  # Set console box text to analysis step description
     
-    meanTubeWidth = _identifyRaceTubeBounds(horizontalLines)
+    tubeBounds, meanTubeWidth = qIdentifyRaceTubeBounds(horizontalLines)
     
     identifyTimeMarks()  # Begin analysis of time mark locations
 
 
-def _identifyRaceTubeBounds(horizontalLines):
+def qIdentifyRaceTubeBounds(horizontalLines):
 
     horizontalLines.sort(key=lambda x: x[1])  # Sort horizontal lines by y value of intercepts (ie top to bottom of image)
     tubeCount = (len(horizontalLines) - 1)  # Set number of tubes to one less than number of boundary lines
@@ -549,7 +550,7 @@ def _identifyRaceTubeBounds(horizontalLines):
         tubeBounds.append(pairs)  # Add ranges for tube to list of tube ranges
     meanTubeWidth = numpy.mean(tubeWidths)  # Set mean tube width to mean of tube widths
     
-    return meanTubeWidth
+    return tubeBounds, meanTubeWidth
 
 
 def identifyTimeMarks():
@@ -570,7 +571,7 @@ def identifyTimeMarks():
     # Commence identification of time marks
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube within tubeBounds
-        timeMarkLinesTube = _identifyTimeMarks(editedImage, tube, tubeBounds, tubeNumber)
+        timeMarkLinesTube = qidentifyTimeMarks(editedImage, tube, tubeBounds, tubeNumber)
         for line in timeMarkLinesTube:
             timeMarkLines.append(line)
     drawLines(True)  # Add lines to image
@@ -578,7 +579,7 @@ def identifyTimeMarks():
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove time marks. When satisfied, click the Proceed button."  # Add directions to console
 
 
-def _identifyTimeMarks(image, tube, tubeBounds, tubeNumber):
+def qidentifyTimeMarks(image, tube, tubeBounds, tubeNumber):
 
     timeMarkLines = []
     tubeWidth = tube[0][1] - tube[0][0]  # Record width of current tube at left end
@@ -670,7 +671,7 @@ def identifyBanding():
         densityProfileOriginal = generateDensityProfile(originalImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5), tubeBounds=tubeBounds)  # Create density profile of current tube
         densityProfiles.append(densityProfileOriginal)  # Add to global density profile list
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube in tubeBounds
-        bandLinesTube = _identifyBanding(editedImage, tube, tubeBounds, tubeNumber, timeMarkLines)
+        bandLinesTube = qidentifyBanding(editedImage, tube, tubeBounds, tubeNumber, timeMarkLines)
         for line in bandLinesTube:
             bandLines.append(line)
         
@@ -679,7 +680,7 @@ def identifyBanding():
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove bands. Remove erroneously identified bands from any non-banding tubes. When satisfied, click the Proceed button."  # Update console text
 
 
-def _identifyBanding(image, tube, tubeBounds, tubeNumber, timeMarkLines):
+def qidentifyBanding(image, tube, tubeBounds, tubeNumber, timeMarkLines):
 
     bandLines = []
     tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
@@ -994,7 +995,7 @@ def populateExperimentDataTable():
             "",
             "",
             "",
-            "(Manual)",
+            "(Linear Regression)",
             "(Sokolove-Bushell)",
             "(Lomb-Scargle)",
             "(Wavelet)",
@@ -1003,7 +1004,7 @@ def populateExperimentDataTable():
         ],
         ["", "", "", "", "", "", "", "", ""]
     ]  # Populate table rows with headers and a blank row
-    maxColumnLengths = [8, 7, 9, 11, 21, 17, 12, 12, 13]  # Set maximum lengths of columns for spacing; 3 spaces between columns
+    maxColumnLengths = [8, 7, 9, 22, 21, 17, 12, 12, 13]  # Set maximum lengths of columns for spacing; 3 spaces between columns
     maxTimeMarksLength = 0  # Blank variable for most time marks in a tube in file
     for tube in tubesMaster:  # For each tube in master tubes list
         if len(tube["timeMarks"]) > maxTimeMarksLength:  # If the tube contains more time marks than the current max
@@ -1066,7 +1067,7 @@ def saveExperimentData():
             "Entry",
             "Pack",
             "Tube #",
-            "Period (Manual)",
+            "Period (Linear Regression)",
             "Period (Sokolove-Bushell)",
             "Period (Lomb-Scargle)",
             "Period (Wavelet/CWT)",
@@ -1470,7 +1471,7 @@ def saveStatisticalAnalysisData():
     )  # Get user selection of file name and location with app popup
     with open(dataFileName, 'w', newline='') as dataFile:  # Open user-specified csv file location
         rowWriter = csv.writer(dataFile, delimiter=',')  # Write rows delimited by ","
-        rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Manually Calculated)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])  # Write title row
+        rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Linear Regression)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])  # Write title row
         for fileRow in fileRows:  # For each file row
             rowWriter.writerow(fileRow)  # Write row to file
 
@@ -2261,8 +2262,8 @@ experimentTabStatisticalAnalysisMethodList = ListBox(
     width=120,
     height="fill",
     align="top",
-    items=["Manual", "Sokolove-Bushell", "Lomb-Scargle", "Wavelet (CWT)"],
-    selected="Manual",
+    items=["Linear Regression", "Sokolove-Bushell", "Lomb-Scargle", "Wavelet (CWT)"],
+    selected="Linear Regression",
 )
 experimentTabStatisticalAnalysisButtonsFrame = Box(experimentTabStatisticalAnalysisFrame, height="fill", align="right")
 experimentTabStatisticalAnalysisFrameSpacer = Box(experimentTabStatisticalAnalysisFrame, height="fill", width=5, align="right")
