@@ -571,7 +571,7 @@ def identifyTimeMarks():
     # Commence identification of time marks
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube within tubeBounds
-        timeMarkLinesTube = qidentifyTimeMarks(editedImage, tube, tubeBounds, tubeNumber)
+        timeMarkLinesTube = qidentifyTimeMarks(editedImage, tube, tubeNumber)
         for line in timeMarkLinesTube:
             timeMarkLines.append(line)
     drawLines(True)  # Add lines to image
@@ -579,11 +579,11 @@ def identifyTimeMarks():
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove time marks. When satisfied, click the Proceed button."  # Add directions to console
 
 
-def qidentifyTimeMarks(image, tube, tubeBounds, tubeNumber):
+def qidentifyTimeMarks(image, tube, tubeNumber):
 
     timeMarkLines = []
     tubeWidth = tube[0][1] - tube[0][0]  # Record width of current tube at left end
-    densityProfile = generateDensityProfile(image, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 20), tubeBounds=tubeBounds)  # Create density profile of current tube #RIGHTHERE
+    densityProfile = generateDensityProfile(image, profileWidth=int(tubeWidth - 20), tubeBounds=tube)  # Create density profile of current tube #RIGHTHERE
     densityProfileSmooth = savgol_filter(densityProfile, window_length=30, polyorder=8, mode="interp")  # Create Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
     peakIndices = find_peaks(densityProfileSmooth, distance=5, threshold=(None, None), prominence=3, wlen=300)[0].tolist()  # Get indices of local maxima of smoothed density profile #RIGHTHERE
     for peakIndex in peakIndices:  # For each peak index
@@ -624,13 +624,13 @@ def qidentifyTimeMarks(image, tube, tubeBounds, tubeNumber):
     return timeMarkLines
 
 
-def generateDensityProfile(image, tubeNumber, profileWidth, tubeBounds):
+def generateDensityProfile(image, profileWidth, tubeBounds):
     """Create a density profile of a given tube within a given image given a profile line width."""
     
 
     densityProfile = []  # Blank list of output densitometry
     for x in range(0, 1160):  # For each x pixel in image #RIGHTHERE
-        yMid = (tubeBounds[tubeNumber][x][0] + (tubeBounds[tubeNumber][x][1] - tubeBounds[tubeNumber][x][0]) / 2)  # Set midline y value
+        yMid = (tubeBounds[x][0] + (tubeBounds[x][1] - tubeBounds[x][0]) / 2)  # Set midline y value
         densities = []  # Blank list of brightnesses at current x value
         for y in range(int(yMid - profileWidth/2), int(yMid + profileWidth/2)):  # For each y within line width at current x value
             if y < 400 and y > 0:  # If y is within image #RIGHTHERE
@@ -668,7 +668,7 @@ def identifyBanding():
     
     for tube in tubeBounds:  # For each tube in tubeBounds
         tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
-        densityProfileOriginal = generateDensityProfile(originalImage, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5), tubeBounds=tubeBounds)  # Create density profile of current tube
+        densityProfileOriginal = generateDensityProfile(originalImage, profileWidth=int(tubeWidth - 5), tubeBounds=tube)  # Create density profile of current tube
         densityProfiles.append(densityProfileOriginal)  # Add to global density profile list
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube in tubeBounds
         bandLinesTube = qidentifyBanding(editedImage, tube, tubeBounds, tubeNumber, timeMarkLines)
@@ -684,7 +684,7 @@ def qidentifyBanding(image, tube, tubeBounds, tubeNumber, timeMarkLines):
 
     bandLines = []
     tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
-    densityProfile = generateDensityProfile(image, tubeNumber=tubeBounds.index(tube), profileWidth=int(tubeWidth - 5), tubeBounds=tubeBounds)  # Create density profile of current tube
+    densityProfile = generateDensityProfile(image, profileWidth=int(tubeWidth - 5), tubeBounds=tube)  # Create density profile of current tube
     densityProfileNoTimeMarks = copy.deepcopy(densityProfile)  # Remove dips due to time marks from density data
     for line in timeMarkLines:  # For each time mark (make densityProfileNoTimeMarks)
         if line[2] == tubeNumber:  # If time mark is in current tube
