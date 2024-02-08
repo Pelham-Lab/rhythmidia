@@ -28,7 +28,8 @@ dependencies = [
     "pyautogui",
     "scikit-image",
     "guizero",
-    "pytest"
+    "pytest",
+    "PyWavelets"
 ]
 
 # Update the urls once the hosting is set up.
