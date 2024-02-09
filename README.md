@@ -1,4 +1,4 @@
-<img src="rhythmidiaLogoBanner.jpg" width=500></img>
+<img src="rhythmidiaLogoBanner.jpg" width=50% margin-left=25%></img>
 
 Rhythmidia
 ---
@@ -73,7 +73,7 @@ Rhythmidia
 1. Whether opening an existing experiment file or working from a new pack image, granular experiment data, plots, and statistical analysis data are located on the Experiment tab
 ![Experiment Tab](screenshots/ExperimentTabBlank.png)
 2. Experiment data (Entry, Pack, Tube # in pack, Period calculated 3 ways, and Growth rate) is located in the table in the top left
-![Experiment tab](screenshots/ExperimentTab1.png)
+![Experiment tab](screenshots/ExperimentTab.png)
 ![Experiment tab](screenshots/ExperimentTab2.png)
 3. In the top right is the frame for statistical analysis of any number of tubes:<br />
 ![Manual Statistical Analysis](screenshots/WaveletStatAnal.png)
@@ -93,7 +93,7 @@ Rhythmidia
     d. Click the button labeled “Save Densitometry” to save a .csv of the densitometry data<br />
     e. Click the button labeled “Save Periodogrammetry” to save a .csv of the periodogrammetry data<br />
 5. At the bottom left is a button labeled "Display Pack Image". This button will display a popup window containing the greyscale version of the image corresponding to whichever pack is selected in the bottom left list that was the exact image used for analysis.
-![Image Popup](screenshots/DisplayImagePopup.png)
+![Image Popup](screenshots/PackImagePopup.png)
 
 ## Functions Overview
 Open Experiment File      (⌘O)<br />
