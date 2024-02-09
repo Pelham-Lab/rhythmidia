@@ -1,24 +1,24 @@
-![rhythmidia](rhythmidiaLogoBanner.jpg)
+<img src="rhythmidiaLogoBanner.jpg" width=500></img>
 
 Rhythmidia
-==============================
+---
 <!--[//]: # (Badges)
 [![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)-->
 
 ### Race tube image analysis for circadian period elucidation in Python. (Rest of blurb here)
-==============================
+---
 ## Installation and Program Launch
-1. Download the rhythmidia-CWT.zip file and move it to your Documents folder (or location of choice)
-2. Unzip rhythmidia-CWT.zip
-    a. This will create the folder rhythmidia-CWT
+1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
+2. Unzip rhythmidia-main.zip
+    <br />a. This will create the folder rhythmidia-main
 3. Open the Terminal application on Mac
-4. Navigate to the rhythmidia-CWT folder in Terminal
+4. Navigate to the rhythmidia-main folder in Terminal
 5. Run the command pip install .
 6. To run Rhythmidia, run the command ''python -c "import rhythmidia; rhythmidia.openAndRun()''
     NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
 
-==============================
+---
 
 ## Rhythmidia Right Out of the Box
 1. The first time you open a new installation of the program, you will be prompted to select a working directory. From this directory, the program will, by default, look for race tube images, and will by default, save data<br />
@@ -26,17 +26,15 @@ Rhythmidia
     b. You are not restricted to using this directory, it is purely for your convenience<br />
     c. This is where analysis data will be exported by default<br />
 2. That’s it! You can start analyzing images immediately.
-    NOTE: On some newer Mac laptops with variable-force-click trackpads, you may find that some clicks are not picked up effectively unless you click with full force.
+<br />        NOTE: On some newer Mac laptops with variable-force-click trackpads, you may find that some clicks are not picked up effectively unless you click with full force.
    
-================================
+---
 ## Preprocessing of Race Tube Images
 1. Crop your scanned race tube image as desired, in the image viewer program of choice, leaving a small amount of background on either long edge
-    GOOD: 
-    BAD: 
 2. No need to make your image greyscale, fix its rotation, or increase contrast- Rhythmidia will take care of all of this internally!
 3. Race tube images can be .png, .tif, .tiff, .jpg, .jpeg, or .svg
 
-================================
+---
 ## Uploading and Analyzing an Image
 1. Upon opening the software, you will be greeted with the “Home” tab, which will look like this:
 ![Home Tab (blank)](screenshots/HomeTabBlank.png)
@@ -68,15 +66,15 @@ Rhythmidia
 11. You will now have the option to click the button labeled “Save Tubes to File”<br />
     a.  This will bring up a popup asking for a name for the pack of tubes in the current image before it saves them to file<br />
     ![Pack Name Prompt](screenshots/PackName.png)
-    b. If you are working within an existing experiment file, this will simply add this pack to the file and update it<br />
+    <br />b. If you are working within an existing experiment file, this will simply add this pack to the file and update it<br />
     c. Otherwise, you will be prompted to Save As a new experiment file for these tubes<br />
 
 ## The Experiment Tab
 1. Whether opening an existing experiment file or working from a new pack image, granular experiment data, plots, and statistical analysis data are located on the Experiment tab
 ![Experiment Tab](screenshots/ExperimentTabBlank.png)
 2. Experiment data (Entry, Pack, Tube # in pack, Period calculated 3 ways, and Growth rate) is located in the table in the top left
-![Banding Identification](screenshots/ExperimentTab1.png)
-![Banding Identification](screenshots/ExperimentTab2.png)
+![Experiment tab](screenshots/ExperimentTab1.png)
+![Experiment tab](screenshots/ExperimentTab2.png)
 3. In the top right is the frame for statistical analysis of any number of tubes:<br />
 ![Manual Statistical Analysis](screenshots/WaveletStatAnal.png)
 ![CWT Statistical Analysis](screenshots/ManualStatAnal.png)
@@ -105,16 +103,16 @@ Save as…                 (↑⌘S)<br />
 Set working directory     (⌘D)<br />
 Open graphics preferences (⌘P)<br />
 
-==============================
+---
 ## Changelog
 V0.01: 
 
 
-==============================
+---
 
 ### Copyright
 
-Copyright (c) 2023, Pelham Lab- Washington University School of Medicine 
+Copyright (c) 2023, Pelham Lab - Washington University School of Medicine 
 
 
 #### Acknowledgements
