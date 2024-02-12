@@ -6,7 +6,7 @@ Rhythmidia
 [![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)-->
 
-### Race tube image analysis for circadian period elucidation in Python. (Rest of blurb here)
+### Race tube image analysis for circadian period elucidation in Python.
 ---
 ## Installation and Program Launch
 1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
@@ -25,7 +25,7 @@ python -c "import rhythmidia; rhythmidia.openAndRun()"
 
 ## Rhythmidia Right Out of the Box
 1. The first time you open a new installation of the program, you will be prompted to select a working directory. From this directory, the program will, by default, look for race tube images, and will by default, save data<br />
-    a. This can be changed later at any time.<br />
+    a. This can be changed later at any time<br />
     b. You are not restricted to using this directory, it is purely for your convenience<br />
     c. This is where analysis data will be exported by default<br />
 2. That’s it! You can start analyzing images immediately.
@@ -123,4 +123,4 @@ Copyright (c) 2023, Pelham Lab - Washington University School of Medicine
 Project based on the 
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.1.
 
-Logo generated with the assistance of [DALL·E](https://labs.openai.com/).
+Logo adapted from a [DALL·E](https://labs.openai.com/)-generated image.
