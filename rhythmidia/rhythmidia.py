@@ -2,7 +2,6 @@ from guizero import *
 from tkinter import Canvas
 import pyautogui
 from PIL import Image, ImageEnhance
-import PIL
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
 import matplotlib.pyplot as plt
@@ -18,14 +17,7 @@ from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 from scipy.signal import lombscargle
 from scipy.signal import periodogram
-
-from scipy.signal import cwt
-from scipy.signal import find_peaks_cwt
-from scipy.signal import morlet2
-from scipy.signal import ricker
-from scipy.signal import morlet
 import pywt
-
 import webbrowser
 
 
@@ -671,7 +663,7 @@ def identifyBanding():
         densityProfileOriginal = generateDensityProfile(originalImage, profileWidth=int(tubeWidth - 5), tubeBounds=tube)  # Create density profile of current tube
         densityProfiles.append(densityProfileOriginal)  # Add to global density profile list
         tubeNumber = int(tubeBounds.index(tube))  # Index of current tube in tubeBounds
-        bandLinesTube = qidentifyBanding(editedImage, tube, tubeBounds, tubeNumber, timeMarkLines)
+        bandLinesTube = qidentifyBanding(editedImage, tube, tubeNumber, timeMarkLines)
         for line in bandLinesTube:
             bandLines.append(line)
         
@@ -680,7 +672,7 @@ def identifyBanding():
     homeTabConsoleTextBox.value = "Click a point on the image to add or remove bands. Remove erroneously identified bands from any non-banding tubes. When satisfied, click the Proceed button."  # Update console text
 
 
-def qidentifyBanding(image, tube, tubeBounds, tubeNumber, timeMarkLines):
+def qidentifyBanding(image, tube, tubeNumber, timeMarkLines):
 
     bandLines = []
     tubeWidth = tube[0][1] - tube[0][0]  # Width of current tube at left end
@@ -1943,8 +1935,8 @@ def displaySetImagePopup():
     imageData = tubeInSetSelected["imageData"]
     imageArray = numpy.array(imageData).astype(numpy.uint8)
     imageConverted = Image.fromarray(numpy.uint8(imageArray), 'L')
-    imageThumbnailWindow = Window(app, title="Pack Image: "+setName+" ("+imageName+")", width=1160, height=400)
-    imageThumbnailPicture = Drawing(imageThumbnailWindow, width="fill", height="fill")
+    imageThumbnailWindow = Window(app, title="Pack Image: "+setName+" ("+imageName+")", width=1160, height=500)
+    imageThumbnailPicture = Drawing(imageThumbnailWindow, width=1160, height=400)
     imageThumbnailPicture.image(0, 0, imageConverted, 1160, 400)
     imageThumnnailDownloadButton = PushButton(imageThumbnailWindow, text="Download Image", command=saveImageFromFile, args=[setName, imageConverted])
     imageThumbnailWindow.show()
