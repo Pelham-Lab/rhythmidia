@@ -19,7 +19,7 @@ Rhythmidia
 ```console
 python -c "import rhythmidia; rhythmidia.openAndRun()"
 ```
-    NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
+<br />  NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
 
 ---
 
