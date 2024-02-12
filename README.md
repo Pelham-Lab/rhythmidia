@@ -6,7 +6,11 @@ Rhythmidia
 [![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)-->
 
+<<<<<<< HEAD
 ### Race tube image analysis for circadian period elucidation in Python.
+=======
+### Race tube image analysis for circadian period elucidation in Python. (Rest of blurb here)
+>>>>>>> b96a9b8b2269f7e5458be2205f8ad35a4b1f3a05
 ---
 ## Installation and Program Launch
 1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
@@ -15,17 +19,25 @@ Rhythmidia
 3. Open the Terminal application on Mac
 4. Navigate to the rhythmidia-main folder in Terminal
 5. Run the command pip install .
+<<<<<<< HEAD
 6. To run Rhythmidia, run the command 
 ```console
 python -c "import rhythmidia; rhythmidia.openAndRun()"
 ```
+=======
+6. To run Rhythmidia, run the command ''python -c "import rhythmidia; rhythmidia.openAndRun()''
+>>>>>>> b96a9b8b2269f7e5458be2205f8ad35a4b1f3a05
     NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
 
 ---
 
 ## Rhythmidia Right Out of the Box
 1. The first time you open a new installation of the program, you will be prompted to select a working directory. From this directory, the program will, by default, look for race tube images, and will by default, save data<br />
+<<<<<<< HEAD
     a. This can be changed later at any time<br />
+=======
+    a. This can be changed later at any time.<br />
+>>>>>>> b96a9b8b2269f7e5458be2205f8ad35a4b1f3a05
     b. You are not restricted to using this directory, it is purely for your convenience<br />
     c. This is where analysis data will be exported by default<br />
 2. That’s it! You can start analyzing images immediately.
