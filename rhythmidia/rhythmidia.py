@@ -902,7 +902,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
                 xIncrement += 1  # Increase x increment of interpolation
     
     # Calculate Sokolove-Bushell periodogram
-    frequenciesSokoloveBushell, periodogramChiSquaredSokoloveBushell = periodogram(densityProfileNoTimeMarks, scaling="spectrum")  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
+    frequenciesSokoloveBushell, periodogramChiSquaredSokoloveBushell = periodogram(densityProfileNoTimeMarks, scaling="spectrum", nfft=116000)  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
     frequenciesSokoloveBushell = frequenciesSokoloveBushell.tolist()[1:]  # Convert S-B frequencies to list
     periodogramChiSquaredSokoloveBushell = periodogramChiSquaredSokoloveBushell.tolist()[1:]  # Convert S-B periodogram values to list
     
