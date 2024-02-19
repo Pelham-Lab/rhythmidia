@@ -877,7 +877,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     bandGaps = []  # List of band gaps in pixels
     for mark in range(0, len(bandMarks) - 1):  # For each 2 consecutive band marks
         bandGaps.append((bandMarks[mark + 1] - bandMarks[mark]))  # Add length of gap in pixels to list of band marks
-    periodManual = (numpy.mean(bandGaps) / numpy.mean(growthRates)) * slopeCoeff  # Set manual period to mean period between band gaps in hours, corrected for slope of tube in image
+    periodLinearRegression = (numpy.mean(bandGaps) / numpy.mean(growthRates)) * slopeCoeff  # Set manual period to mean period between band gaps in hours, corrected for slope of tube in image
     
     # Calculate high and low periods in pixels
     minPeriodPixels = int(minPeriod * meanGrowthPixelsPerHour)  # Lowest period to test (in pixels)
@@ -939,7 +939,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals)
     
     return ({
-        "periodManual": periodManual,
+        "periodLinearRegression": periodLinearRegression,
         "periodSokoloveBushell": periodSokoloveBushell,
         "periodLombScargle": periodLombScargle,
         "periodWavelet": continuousWaveletTransformMeanPeriod,
@@ -1018,7 +1018,7 @@ def populateExperimentDataTable():
                 "  " + str(tubesMaster.index(tube) + 1),
                 str(tube["setName"]),
                 "  " + str(tube["tubeNumber"] + 1),
-                str(round(tubePeriods["periodManual"], 3)) + " hrs",
+                str(round(tubePeriods["periodLinearRegression"], 3)) + " hrs",
                 str(round(tubePeriods["periodSokoloveBushell"], 3)) + " hrs",
                 str(round(tubePeriods["periodLombScargle"], 3)) + " hrs",
                 str(round(tubePeriods["periodWavelet"], 3)) + " hrs",
@@ -1087,7 +1087,7 @@ def saveExperimentData():
                 "  " + str(tubesMaster.index(tube) + 1),
                 str(tube["setName"]),
                 "  " + str(tube["tubeNumber"] + 1),
-                str(round(tubePeriods["periodManual"], 3)) + " hrs",
+                str(round(tubePeriods["periodLinearRegression"], 3)) + " hrs",
                 str(round(tubePeriods["periodSokoloveBushell"], 3)) + " hrs",
                 str(round(tubePeriods["periodLombScargle"], 3)) + " hrs",
                 str(round(tubePeriods["periodWavelet"], 3)) + " hrs",
@@ -1160,7 +1160,7 @@ def performStatisticalAnalysis():
 
     # Get selected tubes and method from list boxes
     tubesSelected = experimentTabStatisticalAnalysisTubeList.value  # Set list of selected tubes from options list
-    method = "period" + experimentTabStatisticalAnalysisMethodList.value.replace("-", "").replace(" (CWT)", "")
+    method = "period" + experimentTabStatisticalAnalysisMethodList.value.replace("-", "").replace(" (CWT)", "").replace(" ", "")
     isWavelet = False
     if experimentTabStatisticalAnalysisMethodList.value == "Wavelet (CWT)":
         isWavelet = True
@@ -1440,7 +1440,7 @@ def saveStatisticalAnalysisData():
     fileRows = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
         if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))["periodManual", "periodSokoloveBushell", "periodLombScargle", "periodWavelet"])  # List of set name, tube name, and all three periods for each tube
+            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))["periodLinearRegression", "periodSokoloveBushell", "periodLombScargle", "periodWavelet"])  # List of set name, tube name, and all three periods for each tube
             fileRows.append(fileRow)  # Add selected period to list of periods for analysis
     
     #Create file contents
@@ -1716,7 +1716,7 @@ def proceedHandler():
                         bandMarks.append(line[0])  # Add line x to bandMarks
                 bandMarks.sort()  # Sort band marks low to high/left to right
                 periods = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, markHours[0], markHours[len(timeMarks)-1])  # Calculate period data of tube
-                prelimContents[tube + 2][2] = str(round(periods["periodManual"], 2))  # Add manually calculated period (rounded) to preliminary data list
+                prelimContents[tube + 2][2] = str(round(periods["periodLinearRegression"], 2))  # Add manually calculated period (rounded) to preliminary data list
             updatePreliminaryDataDisplay()  # Update preliminary data text box
             proceedButton.disable()  # Disable proceed button
             saveTubesToFileButton.enable()  # Enable save tubes button
