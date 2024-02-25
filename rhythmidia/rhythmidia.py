@@ -843,6 +843,7 @@ def saveTubesToFilePrompt():
 def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarksRaw, minPeriod, maxPeriod, tubeRangeRaw, calculationWindowStart, calculationWindowEnd):
     """Calculate periods of a given tube's densitometry profile"""
     
+
     timeMarks = timeMarksRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)]  # Set time marks
     markHours = markHoursRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)]  # Set mark hours to span corresponding to time marks
     
@@ -911,7 +912,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     frequenciesLombScargle = (numpy.linspace((2 * numpy.pi) / maxPeriodPixels, (2 * numpy.pi) / minPeriodPixels, frequencyInterval).tolist())  # Create list of angular frequencies to test for Lomb-Scargle periodogram
     periodogramPowerSpectrumLombScargle = lombscargle(list(range(0, len(densityProfileNoTimeMarks))), densityProfileNoTimeMarks, frequenciesLombScargle, precenter=True)  # Get Lomb-Scargle periodogram
     periodogramPowerSpectrumLombScargle = periodogramPowerSpectrumLombScargle.tolist()  # Convert L-S periodogram values to list
-    
+
     # Convert frequencies to periods
     periodLombScarglePixels = (2 * numpy.pi) / frequenciesLombScargle[periodogramPowerSpectrumLombScargle.index(numpy.max(periodogramPowerSpectrumLombScargle))]  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
     periodSokoloveBushellPixels = 1 / frequenciesSokoloveBushell[periodogramChiSquaredSokoloveBushell.index(numpy.max(periodogramChiSquaredSokoloveBushell))]  # Convert frequency of maximal spectral density from Sokolove-Bushell periodogram to horizontal length in pixels
@@ -937,7 +938,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
             periodPeakYVals.append(continuousWaveletTransformPeriodsYAxis[periodsColumn.index(numpy.max(periodsColumn))])
     continuousWaveletTransformPeaksSlope = numpy.polynomial.polynomial.polyfit(periodPeakXVals, periodPeakYVals, 1)[1]
     continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals)
-    
+
     return ({
         "periodLinearRegression": periodLinearRegression,
         "periodSokoloveBushell": periodSokoloveBushell,
@@ -1059,10 +1060,10 @@ def saveExperimentData():
             "Entry",
             "Pack",
             "Tube #",
-            "Period (Linear Regression)",
-            "Period (Sokolove-Bushell)",
-            "Period (Lomb-Scargle)",
-            "Period (Wavelet/CWT)",
+            "Period (Linear Regression) (hrs)",
+            "Period (Sokolove-Bushell) (hrs)",
+            "Period (Lomb-Scargle) (hrs)",
+            "Period (Wavelet/CWT) (hrs)",
             "CWT Slope (hrs/hr)",
             "Growth Rate (mm/hr)"
         ]
@@ -1087,10 +1088,10 @@ def saveExperimentData():
                 "  " + str(tubesMaster.index(tube) + 1),
                 str(tube["setName"]),
                 "  " + str(tube["tubeNumber"] + 1),
-                str(round(tubePeriods["periodLinearRegression"], 3)) + " hrs",
-                str(round(tubePeriods["periodSokoloveBushell"], 3)) + " hrs",
-                str(round(tubePeriods["periodLombScargle"], 3)) + " hrs",
-                str(round(tubePeriods["periodWavelet"], 3)) + " hrs",
+                str(round(tubePeriods["periodLinearRegression"], 3)),
+                str(round(tubePeriods["periodSokoloveBushell"], 3)),
+                str(round(tubePeriods["periodLombScargle"], 3)),
+                str(round(tubePeriods["periodWavelet"], 3)),
                 str(round(tubePeriods["slopeWavelet"], 3)),
                 str(tube["growthRate"])
             ]
@@ -1519,7 +1520,7 @@ def saveDensitometryData():
     markHours = []  # Blank list for mark hours
     tubeRange = []
     for tube in tubesMaster:  # For each tube in global master tubes list
-        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:  # If tube matches selected tube
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber-1:  # If tube matches selected tube
             densityProfile = tube["densityProfile"]  # Set density profile to current tube's density profile
             timeMarks = tube["timeMarks"]
             markHours = tube["markHours"]
@@ -1528,10 +1529,33 @@ def saveDensitometryData():
     periodData = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
     densitometryXValsHours = periodData["densitometryXHours"]
     densitometryClipped = periodData["densityProfile"]
+
+
+    # Generate densitometry with interpolated deletions of time mark regions
+    densityProfileNoTimeMarks = copy.deepcopy(densitometryClipped)  # Remove dips due to time marks from density data
+    for line in timeMarks:  # For each time mark (make densityProfileNoTimeMarks)
+        windowRadius = 10  # Set radius of time mark deletion window
+        lowX = line - windowRadius  # Leftmost bound of deletion window
+        highX = line + windowRadius  # Rightmost bound of deletion window
+        if lowX < 0:
+            lowX = 0
+        if highX > len(densityProfileNoTimeMarks)-1:
+            highX = len(densityProfileNoTimeMarks)-1
+        if lowX < len(densityProfileNoTimeMarks)-1:
+            yIncrement = (densityProfileNoTimeMarks[highX] - densityProfileNoTimeMarks[lowX]) / (2*windowRadius+1)  # Set y increment of interpolation
+            xIncrement = 0  # Set x increment of interpolation
+            for xWalk in range(lowX, highX):  # For x value in interp window
+                if xWalk < len(densityProfileNoTimeMarks) - 1 and xWalk > 0:  # If x is within image
+                    densityProfileNoTimeMarks[xWalk] = densityProfileNoTimeMarks[lowX] + yIncrement * xIncrement  # Interpolate density
+                xIncrement += 1  # Increase x increment of interpolation
+
+
     with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+        #rowWriter.writerow(["Time (hrs)", "Density Profile", "No time marks"])  # Write title row to file
         rowWriter.writerow(["Time (hrs)", "Density Profile"])  # Write title row to file
         for index in range(len(densitometryClipped)):
+            #newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileNoTimeMarks[index]]
             newLine = [densitometryXValsHours[index], densitometryClipped[index]]
             rowWriter.writerow(newLine)  # Write row to file
 
@@ -1569,7 +1593,7 @@ def savePeriodogramData():
             method = ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]
     tubeToPlot = []  # Blank list for tube data of tube to plot
     for tube in tubesMaster:  # For each tube in global master tubes list
-        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber:  # If tube matches selected tube name
+        if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber-1:  # If tube matches selected tube name
             tubeToPlot = tube  # Set tube to current tube
     periodData = calculatePeriodData(tubeToPlot["densityProfile"], tubeToPlot["markHours"], tubeToPlot["timeMarks"], tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))  # Calculate period data for selected tube
     periodogramXVals = []  # Blank list for x axis values of periodogram plot
