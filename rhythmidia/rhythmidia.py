@@ -1486,7 +1486,7 @@ def savePlot():
             folder=workingDir,
             filetypes=[["SVG", "*.svg"], ["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"]],
             save=True,
-            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber),
+            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber-1),
         )  # Get file name and save location from user via app popup
         newFigure = copy.deepcopy(plotImageArray)
         newFigure.set_dpi(1200)
