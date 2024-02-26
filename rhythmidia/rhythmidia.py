@@ -1481,12 +1481,13 @@ def savePlot():
 
     if plotImageArray is not None:  # If plots have already been created
         tubeNumber = experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:]  # Get tube number from tube name in tube list selection
+        method = experimentTabPlotTubeSelectionMethodList.value.replace("Wavelet (CWT)", "CWT")  # Get method from selection in method list
         plotFileName = app.select_file(
             title="Save plot as...",
             folder=workingDir,
             filetypes=[["SVG", "*.svg"], ["PNG", "*.png"], ["JPG", "*.jpg"], ["JPEG", "*.jpeg"], ["TIFF", "*.tif"]],
             save=True,
-            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber-1),
+            filename=(experimentTabPlotTubeSelectionSetList.value + "_tube" + tubeNumber + "_" + method),
         )  # Get file name and save location from user via app popup
         newFigure = copy.deepcopy(plotImageArray)
         newFigure.set_dpi(1200)
