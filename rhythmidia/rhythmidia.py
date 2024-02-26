@@ -866,6 +866,10 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
             hoursEndCalculationWindowIndex = index  # Set the index of the end of the time window to this index
     if hoursEndCalculationWindowIndex is None:  # If we never set an index for the end of the time window
         hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1  # Set the index of the end of the time window to the last index possible
+    for index, value in enumerate(timeMarks):
+        timeMarks[index] = value - hoursStartCalculationWindowIndex
+    while numpy.min(timeMarks) < 0:
+        timeMarks.pop(timeMarks.index(numpy.min(timeMarks)))
     densityProfile = densityProfileRaw[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set time window to portion of densitometry x axis between start and end of time window indices
     tubeRange = tubeRangeRaw[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set corresponding window of tube range
     densitometryXValsHoursWindow = densitometryXValsHours[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
@@ -887,7 +891,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     # Generate densitometry with interpolated deletions of time mark regions
     densityProfileNoTimeMarks = copy.deepcopy(densityProfile)  # Remove dips due to time marks from density data
     for line in timeMarks:  # For each time mark (make densityProfileNoTimeMarks)
-        windowRadius = 10  # Set radius of time mark deletion window
+        windowRadius = 13  # Set radius of time mark deletion window
         lowX = line - windowRadius  # Leftmost bound of deletion window
         highX = line + windowRadius  # Rightmost bound of deletion window
         if lowX < 0:
@@ -959,7 +963,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
         "densitometryXHours": densitometryXValsHoursWindow,
         "densityProfile": densityProfile,
         "timeMarks": timeMarks,
-        "bandMarks": bandMarks
+        "bandMarks": bandMarks,
+        "densityNoTimeMarks": densityProfileNoTimeMarks
     })
 
 
@@ -1530,26 +1535,7 @@ def saveDensitometryData():
     periodData = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
     densitometryXValsHours = periodData["densitometryXHours"]
     densitometryClipped = periodData["densityProfile"]
-
-
-    # Generate densitometry with interpolated deletions of time mark regions
-    densityProfileNoTimeMarks = copy.deepcopy(densitometryClipped)  # Remove dips due to time marks from density data
-    for line in timeMarks:  # For each time mark (make densityProfileNoTimeMarks)
-        windowRadius = 10  # Set radius of time mark deletion window
-        lowX = line - windowRadius  # Leftmost bound of deletion window
-        highX = line + windowRadius  # Rightmost bound of deletion window
-        if lowX < 0:
-            lowX = 0
-        if highX > len(densityProfileNoTimeMarks)-1:
-            highX = len(densityProfileNoTimeMarks)-1
-        if lowX < len(densityProfileNoTimeMarks)-1:
-            yIncrement = (densityProfileNoTimeMarks[highX] - densityProfileNoTimeMarks[lowX]) / (2*windowRadius+1)  # Set y increment of interpolation
-            xIncrement = 0  # Set x increment of interpolation
-            for xWalk in range(lowX, highX):  # For x value in interp window
-                if xWalk < len(densityProfileNoTimeMarks) - 1 and xWalk > 0:  # If x is within image
-                    densityProfileNoTimeMarks[xWalk] = densityProfileNoTimeMarks[lowX] + yIncrement * xIncrement  # Interpolate density
-                xIncrement += 1  # Increase x increment of interpolation
-
+    densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
 
     with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
