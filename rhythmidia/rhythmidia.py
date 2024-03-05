@@ -176,8 +176,11 @@ def parseTubeFromFile(tube):
         .replace("]", "")
         .split(",")
     )  # Raw list of band marks positions from tenth element of line, with punctuation removed, delimited by ","
-    for index, xVal in enumerate(bandMarks):  # For each element of raw band marks data
-        bandMarks[index] = int(xVal)  # Convert value to int from string
+    if bandMarks == ['']:
+        bandMarks = []
+    else:
+        for index, xVal in enumerate(bandMarks):  # For each element of raw band marks data
+            bandMarks[index] = int(xVal)  # Convert value to int from string
     parsedTube["bandMarks"] = bandMarks # Add band marks to race tube data dictionary
     
     return parsedTube
@@ -1536,14 +1539,15 @@ def saveDensitometryData():
     densitometryXValsHours = periodData["densitometryXHours"]
     densitometryClipped = periodData["densityProfile"]
     densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
+    densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
 
     with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
-        #rowWriter.writerow(["Time (hrs)", "Density Profile", "No time marks"])  # Write title row to file
-        rowWriter.writerow(["Time (hrs)", "Density Profile"])  # Write title row to file
+        rowWriter.writerow(["Time (hrs)", "Density Profile", "No time marks"])  # Write title row to file
+        #rowWriter.writerow(["Time (hrs)", "Density Profile"])  # Write title row to file
         for index in range(len(densitometryClipped)):
-            #newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileNoTimeMarks[index]]
-            newLine = [densitometryXValsHours[index], densitometryClipped[index]]
+            newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileSmooth[index]]
+            #newLine = [densitometryXValsHours[index], densitometryClipped[index]]
             rowWriter.writerow(newLine)  # Write row to file
 
 
