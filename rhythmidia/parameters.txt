@@ -1,5 +1,6 @@
-workingDir=
+workingDir=/Users/akeeley/Desktop/3_2_24_FGS
 colorGraph=#000000
 colorHoriz=#00f200
 colorVert=#ff0017
 colorBand=#0090fb
+heatmap=vididis
