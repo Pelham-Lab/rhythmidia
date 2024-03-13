@@ -53,6 +53,7 @@ tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setN
 canvas = None  # Plot entity
 keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Shift, Command/Control, S, O, P, D, H, C
 plotImageArray = None
+editDataSetList = None
 
 
 def setWorkingDirectory():
@@ -1301,9 +1302,13 @@ def populatePlots():
             xVal = period * meanGrowthHoursPerPixel * slopeCoeff  # Set x value in hours to product of period in pixels, slope coefficient, and ratio of hours to pixels to get actual period in hours
             if xVal >= 14 and xVal <= 32:  # If x value in hours is within period range
                 periodogramXVals.append(xVal)  # Add x value to list of periodogram x values
-                periodogramYVals.append(calculatedPeriodogramYVals[frequency])  # Add corresponding y value to list of periodogram y values
+                if method == ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]:  # If method is 4 (Sokolove-Bushell)
+                    periodogramYVals.append(calculatedPeriodogramYVals[frequency])  # Add corresponding y value to list of periodogram y values
+                elif method == ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]:  # If method is Lomb-Scargle:
+                    periodogramYVals.append(calculatedPeriodogramYVals[frequency]/10000)  # Add corresponding y value to list of periodogram y values
     
     # Create densitometry and periodogram plots
+    plt.rcParams["font.family"] = "Arial"
     gridSpecLayout = gridspec.GridSpec(2,2, width_ratios=[20,1], height_ratios=[1,1], hspace=0.55)  # Specification for grid of multi-plot figure
     numPixelsForFigureDownload = 1/plt.rcParams['figure.dpi']  # Set number of pixels for figure download
     tubeDoubleFigure = plt.figure(figsize=(int(screenWidth*0.5)*numPixelsForFigureDownload, int(appHeight*0.4)*numPixelsForFigureDownload))  # Create figure to contain both plots
@@ -1348,7 +1353,7 @@ def populatePlots():
         tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])  # Create second plot os L-S periodogram
     else:  # If using wavelet method
         tubeDoubleFigurePlots[1].imshow(cwtZAxis, cmap="viridis", extent=(cwtXAxis[0], cwtXAxis[-1], cwtYAxis[0], cwtYAxis[-1]), aspect="auto")#, aspect=ax0aspect
-        tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap="viridis"), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1))
+        tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap="viridis"), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         tubeDoubleFigurePlots[1].xaxis.set_major_locator(cwtXAxisLabels)
         tubeDoubleFigurePlots[1].set(
@@ -1364,7 +1369,7 @@ def populatePlots():
     if method == ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]:  # If using S-B periodogram
         tubeDoubleFigurePlots[1].set(ylabel="Chi Squared")  # Set y label for S-B periodogram
     elif method == ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]:  # If using L-S periodogram
-        tubeDoubleFigurePlots[1].set(ylabel="Spectral Density")  # Set y label for L-S periodogram
+        tubeDoubleFigurePlots[1].set(ylabel="Spectral Density\n(x $\mathregular{10^{-4}}$)")  # Set y label for L-S periodogram
     else:  # If using wavelet method
         tubeDoubleFigurePlots[1].set(ylabel="Period (hrs)")
     if method != ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
@@ -1883,6 +1888,102 @@ def graphicsPreferencesPrompt():
     graphicsPreferencesWindow.repeat(200, graphicsPreferencesPromptUpdate, args=[[changeGraphColorTextBox, changeHorizontalLineColorTextBox, changeVerticalLineColorTextBox, changeBandLineColorTextBox]])
 
 
+def displayEditDataPopup():
+
+    global tubesMaster
+    global editDataSetList
+
+
+    editTubesWindow = Window(app, title="Edit Data", layout="auto", width=400, height=300)  # Create popup window
+    editTubesWindow.show(wait=True)
+
+    editDataSetListFrame = Box(editTubesWindow, width=150, height="fill", align="left")
+    editDataSetListTitle = Text(editDataSetListFrame, text="Packs:", align="top", font="Arial bold")
+    editDataSetList = ListBox(
+        editDataSetListFrame,
+        scrollbar=True,
+        width=150,
+        height="fill",
+        align="top"
+    )
+    editDataButtonsFrame = Box(editTubesWindow, align="left")
+    editDataRenameButton = PushButton(
+        editDataButtonsFrame,
+        text="Rename",
+        pady=2,
+        command=editDataRenamePrompt,
+        width="fill"
+    )
+    editDataRemoveButton = PushButton(
+        editDataButtonsFrame,
+        text="Remove",
+        pady=2,
+        command=lambda:editDataPopupUpdate(action="remove"),
+        width="fill"
+    )
+
+    editDataPopupUpdate()
+
+
+def editDataRenamePrompt():
+    
+    global editDataSetList
+    
+    setName = editDataSetList.value
+    if setName:
+        renamePopup = Window(app, title="Rename pack...", width=200, height=120)  # Popup window
+        renamePopup.show(wait=True)  # Show window as popup
+        renameText = Text(renamePopup, text="Rename pack "+setName+" to:", align="top", font="Arial bold")
+        renameTextBox = TextBox(renamePopup)  # Text box for new name of tube set
+        renameTextBox.focus()  # Focus name text box
+        renameButton = PushButton(renamePopup, text="Confirm", command=lambda: [editDataPopupUpdate(action="rename", newName=renameTextBox.value), renamePopup.destroy()])  # Button to save tubes to file and close popup
+        renameButton.text_size = 13
+        renameButton.font = "Arial bold"
+
+
+def editDataPopupUpdate(action=None, newName=None):
+    
+    global tubesMaster
+    global editDataSetList
+
+    setName = editDataSetList.value
+    match action:
+        case "rename":
+            for tube in tubesMaster:
+                if tube["setName"] == setName:
+                    tube["setName"] = newName
+            saveExperimentFile()
+        case "remove":
+            if not newName:
+                until = False
+                while until is False:
+                    for index, tube in enumerate(tubesMaster):
+                        if tube["setName"] == setName:
+                            tubesMaster.pop(index)
+                            break
+                    count = 0
+                    for tube in tubesMaster:
+                        if tube["setName"] == setName:
+                            count += 1
+                    if count == 0:
+                        until = True
+            saveExperimentFile()
+
+    #Get information for sets in file
+    setsToDisplay = []  # Blank list of tube sets
+    for tube in tubesMaster:  # For each tube in master tubes list
+        if tube["setName"] not in setsToDisplay:  # If set name of tube is not in list of set options
+            setsToDisplay.append(tube["setName"])  # Add tube set name to list of set options
+    
+    #Change elements of set list to reflect user selections
+    while len(editDataSetList.items) > 0:  # Until tube list is empty
+        for item in editDataSetList.items:  # For each item in tube list
+            editDataSetList.remove(item)  # Remove item from tube list
+    if len(editDataSetList.items) == 0:  # If set list is empty
+        for index, setName in enumerate(setsToDisplay):  # For each set to display
+            editDataSetList.insert(index, setName)  # Add set name to set list
+
+
 def colorPickHandler(button):
     """Prompt user to pick a new color when a button to change a color preference is clicked."""
     
@@ -2228,6 +2329,10 @@ experimentTabTableParamsRowSpacer = Box(experimentTabTableParamsRow, height="fil
 experimentTabTableParamsRecalcButton = PushButton(experimentTabTableParamsRow, text="Recalculate Periods", align="left", command=populateExperimentDataTable)
 experimentTabTableParamsRecalcButton.text_size = 13
 experimentTabTableParamsRecalcButton.font = "Arial bold"
+experimentTabTableFrameSpacer = Box(experimentTabTableParamsRow, height="fill", width=15, align="left")
+experimentTabEditTubesButton = PushButton(experimentTabTableParamsRow, text="Edit Tubes", align="left", command=displayEditDataPopup)
+experimentTabEditTubesButton.text_size = 13
+experimentTabEditTubesButton.font = "Arial bold"
 experimentTabTableFrameVerticalSpacer2 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
 
 
@@ -2327,7 +2432,7 @@ experimentTabPlotTubeSelectionMethodList = ListBox(
     items=["Sokolove-Bushell", "Lomb-Scargle", "Wavelet (CWT)"],
     selected="Sokolove-Bushell"
 )
-experimentTabPlotTubeSelectionButtonsFrame = Box(experimentTabPlotTubeSelectionFrame)
+experimentTabPlotTubeSelectionButtonsFrame = Box(experimentTabPlotTubeSelectionFrame, align="left")
 experimentTabPlotTubeSelectionCreatePlotsButton = PushButton(
     experimentTabPlotTubeSelectionButtonsFrame, 
     text="\nPlot\n", 
