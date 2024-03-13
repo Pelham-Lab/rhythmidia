@@ -330,6 +330,8 @@ def cancelImageAnalysis():
     rawImage, rightImage, finalImage = None, None, None  # Zero out image variables
     imageName = ""  # Zero out current image name
     prelimContents = [["Preliminary Period Data", "", ""], ["Tube", "# Marks", "Average Linear Regression Period (hrs)"]]  # Reset preliminary data contents to headers
+    #prelimChildren = homeTabPreliminaryDataAnalysisFrame.children
+    #for child in prelimChildren
     homeTabPreliminaryDataAnalysisTextBox.value = ""  # Zero out preliminary data text box
     tubeLength = -1  # Zero out tube length
     tubeBounds = []  # Zero out tube boundaries list
@@ -352,10 +354,17 @@ def updatePreliminaryDataDisplay():
     global prelimContents
 
     text = ""  # Blank string for text
-    for line in prelimContents:  # For each line of preliminary data list
-        text = (text + line[0] + " " * (7 - len(line[0])))  # Append tube number and spacing to text
-        text = (text + line[1] + " " * (10 - len(line[1])))  # Append number of time marks and spacing to text
-        text = (text + line[2] + " " * (23 - len(line[2])) + "\n")  # Append manually calculated period and spacing and newline to text
+    for index, line in enumerate(prelimContents):  # For each line of preliminary data list
+        if index == 0:
+            text += line[0] + "\n\n"
+        elif index == 1:
+            text += line[0] + " " * (7 - len(line[0]))  # Append tube number and spacing to text
+            text += line[1] + " " * (10 - len(line[1]))  # Append number of time marks and spacing to text
+            text += line[2] + " " * (23 - len(line[2])) + "\n"  # Append manually calculated period and spacing and newline to text
+        else:
+            text += " " + line[0] + " " * (6 - len(line[0]))  # Append tube number and spacing to text
+            text += "   " + line[1] + " " * (7 - len(line[1]))  # Append number of time marks and spacing to text
+            text += "        " + line[2] + " " * (15 - len(line[2])) + "\n"  # Append manually calculated period and spacing and newline to text
     homeTabPreliminaryDataAnalysisTextBox.value = text  # Set preliminary data text box to text variable
 
 
@@ -2300,7 +2309,7 @@ resetRaceTubeImageAnalysisButton = PushButton(homeTabBottomButtonRowFrame, text=
 resetRaceTubeImageAnalysisButton.text_size = 13
 resetRaceTubeImageAnalysisButton.font = "Arial bold"
 resetRaceTubeImageAnalysisButton.disable()
-homeTabPreliminaryDataAnalysisFrame = Box(homeTabFrame, width="fill", height=400, align="top")
+homeTabPreliminaryDataAnalysisFrame = Box(homeTabFrame, width="fill", height=400, align="top")#, layout="grid"
 homeTabPreliminaryDataAnalysisTextBox = Text(homeTabPreliminaryDataAnalysisFrame, font="Courier", size=14, align="top")
 # Set up home tab colors
 raceTubeLengthFrame.bg = "gray95"
