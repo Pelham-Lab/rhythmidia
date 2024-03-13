@@ -1361,7 +1361,7 @@ def populatePlots():
     elif method == ["periodogramPowerSpectrumLombScargle", "frequenciesLombScargle"]:  # If using L-S periodogram
         tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])  # Create second plot os L-S periodogram
     else:  # If using wavelet method
-        tubeDoubleFigurePlots[1].imshow(cwtZAxis, cmap="viridis", extent=(cwtXAxis[0], cwtXAxis[-1], cwtYAxis[0], cwtYAxis[-1]), aspect="auto")#, aspect=ax0aspect
+        tubeDoubleFigurePlots[1].imshow(cwtZAxis, cmap=appParameters["heatmap"], extent=(cwtXAxis[0], cwtXAxis[-1], cwtYAxis[0], cwtYAxis[-1]), aspect="auto")#, aspect=ax0aspect
         tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap=appParameters["heatmap"]), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         tubeDoubleFigurePlots[1].xaxis.set_major_locator(cwtXAxisLabels)
@@ -1884,6 +1884,9 @@ def graphicsPreferencesPrompt():
     changeBandLineColorButton.text_size = 13
     changeBandLineColorButton.font = "Arial bold"
     changeBandLineColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,3], text=appParameters["colorBand"], width=7)
+    changeHeatmapGradientLabel = Text(graphicsPreferencesWindow, grid=[0,4], text="Heatmap Gradient:", size=13, font="Arial bold", color="white")
+    changeHeatmapGradientDropdown = Combo(graphicsPreferencesWindow, grid=[2,4], options=["Viridis", "Plasma", "Inferno", "Magma", "Cividis"], selected=appParameters["heatmap"], command=colorPickHandler)
+    changeHeatmapGradientDropdown.select_default()
 
     changeGraphColorTextBox.text_color = appParameters["colorGraph"]
     changeGraphColorTextBox.bg = invertColor(appParameters["colorGraph"])
@@ -2018,6 +2021,11 @@ def colorPickHandler(button):
             newColor = app.select_color(color=appParameters["colorBand"])
             appParameters["colorBand"] = newColor
             updateAppParameters()
+        case _:
+            appParameters["heatmap"] = button.lower()
+            updateAppParameters()
+            populatePlots()
+            return
     drawLines(True)
 
 
