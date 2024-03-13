@@ -31,7 +31,7 @@ csv.field_size_limit(999999999)
 
 
 #Assign global variable initial values
-appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue"}  # Dictionary of settings
+appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue", "heatmap":""}  # Dictionary of settings
 openFile = ""  # Name of open experiment file
 workingDir = ""  # Name of working directory
 imageName = ""  # Name of opened image
@@ -1362,7 +1362,7 @@ def populatePlots():
         tubeDoubleFigurePlots[1].plot(periodogramXVals, periodogramYVals, label="Spectral Density", color=appParameters["colorGraph"])  # Create second plot os L-S periodogram
     else:  # If using wavelet method
         tubeDoubleFigurePlots[1].imshow(cwtZAxis, cmap="viridis", extent=(cwtXAxis[0], cwtXAxis[-1], cwtYAxis[0], cwtYAxis[-1]), aspect="auto")#, aspect=ax0aspect
-        tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap="viridis"), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
+        tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap=appParameters["heatmap"]), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         tubeDoubleFigurePlots[1].xaxis.set_major_locator(cwtXAxisLabels)
         tubeDoubleFigurePlots[1].set(

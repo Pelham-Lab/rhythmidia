@@ -3,4 +3,4 @@ colorGraph=#000000
 colorHoriz=#00f200
 colorVert=#ff0017
 colorBand=#0090fb
-heatmap=vididis
+heatmap=viridis
