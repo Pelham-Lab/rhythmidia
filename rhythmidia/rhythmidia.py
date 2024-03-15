@@ -39,7 +39,7 @@ rawImage = None  # Blank variable for raw uploaded image
 finalImage = None  # Blank variable for finalized uploaded image
 rotateDeg = 0  # Degree of rotation of finalized image compared to raw
 markHours = []  # Blank variable for mark file converted to number of hours
-tubeLength = -1  # Blank variable for user-set tube length in mm
+tubeLength = ""  # Blank variable for user-set tube length in mm
 analState = -1  # Analysis state
 prelimContents = [["Preliminary Period Data", "", ""], ["Tube", "# Marks", "Average Period (hrs)"]] # List of lists of preliminary analysis data for home screen
 tubeBounds = []  # each element is a tube, then [[ymin, ymax],...]
@@ -149,7 +149,7 @@ def parseTubeFromFile(tube):
     for num in enumerate(densityProfile):  # For each element of raw densitometry data
         densityProfile[num[0]] = float(num[1])  # Convert value to float from string
     parsedTube["densityProfile"] = densityProfile # Set race tube density profile to parsed density profile data
-    parsedTube["growthRate"] = float(tube[6]) # Set growth rate to seventh element of line
+    parsedTube["growthRate"] = tube[6] # Set growth rate to seventh element of line
     tubeBoundsRaw = (tube[7][1:-1].replace(" ", "").split("],["))  # Raw list of tube boundary doubles, from eighth element of line with punctuation removed, delimeted by ","
     pairs = []  # Blank list for tube boundary doubles
     for pairRaw in tubeBoundsRaw:  # For each double in raw list of tube boundary doubles
@@ -333,7 +333,7 @@ def cancelImageAnalysis():
     #prelimChildren = homeTabPreliminaryDataAnalysisFrame.children
     #for child in prelimChildren
     homeTabPreliminaryDataAnalysisTextBox.value = ""  # Zero out preliminary data text box
-    tubeLength = -1  # Zero out tube length
+    tubeLength = ""  # Zero out tube length
     tubeBounds = []  # Zero out tube boundaries list
     meanTubeWidth = -1  # Zero out mean tube width
     meanTubeSlope = None  # Zero out mean horizontal slope
@@ -1673,7 +1673,10 @@ def saveTubesToFile(setName):
         if line[2] == 0:  # If line is in current tube
             topTubeTimeMarks.append(line[0])  # Add line x to timeMarks
     topTubeTimeMarks.sort()  # Sort time marks low to high/left to right
-    mmPerPixelInImage = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
+    if tubeLength == "":
+        mmPerPixelInImage = "N/A"
+    else:
+        mmPerPixelInImage = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
     for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
         tubeRange = tubeBounds[tube]  # Y bounds of tube
         densityProfile = densityProfiles[tube]  # Density profile of tube
@@ -1692,7 +1695,10 @@ def saveTubesToFile(setName):
         for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
             timeGaps.append((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
         meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
-        growthRate = round(mmPerPixelInImage * meanGrowthPixelsPerHour, 2)#mm per hour
+        if mmPerPixelInImage == "N/A":
+            growthRate = "N/A"
+        else:
+            growthRate = round(mmPerPixelInImage * meanGrowthPixelsPerHour, 2)#mm per hour
         tubesMaster.append(
             {
                 "setName": setName,
@@ -2251,7 +2257,7 @@ raceTubeLengthLabel = Text(
     text="Length from first to last\ntime mark of 1st tube (mm)",
     size=12
 )
-raceTubeLengthTextBox = TextBox(raceTubeLengthFrame, text="300", grid=[1, 0])
+raceTubeLengthTextBox = TextBox(raceTubeLengthFrame, text="", grid=[1, 0])
 raceTubeLengthTextBox.text_size = 13
 homeTabTopButtonRowSpacer2 = Box(homeTabTopButtonRowFrame, grid=[4,0], height="fill", width=5)
 lockAndAnalyzeButton = PushButton(
@@ -2347,7 +2353,7 @@ experimentTabTableParamsRecalcButton = PushButton(experimentTabTableParamsRow, t
 experimentTabTableParamsRecalcButton.text_size = 13
 experimentTabTableParamsRecalcButton.font = "Arial bold"
 experimentTabTableFrameSpacer = Box(experimentTabTableParamsRow, height="fill", width=15, align="left")
-experimentTabEditTubesButton = PushButton(experimentTabTableParamsRow, text="Edit Tubes", align="left", command=displayEditDataPopup)
+experimentTabEditTubesButton = PushButton(experimentTabTableParamsRow, text="Edit Packs", align="left", command=displayEditDataPopup)
 experimentTabEditTubesButton.text_size = 13
 experimentTabEditTubesButton.font = "Arial bold"
 experimentTabTableFrameVerticalSpacer2 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
