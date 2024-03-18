@@ -136,8 +136,9 @@ def parseTubeFromFile(tube):
         .replace("]", "")
         .split(",")
     )  # Raw list of mark hour values, with punctuation removed, delimited by ","
-    for index, hours in enumerate(markHours):  # For each element of raw mark hours data
-        markHours[index] = float(hours)  # Convert value to float from string
+    markHours = [float(i) for i in markHours]
+    #for index, hours in enumerate(markHours):  # For each element of raw mark hours data
+        #markHours[index] = float(hours)  # Convert value to float from string
     parsedTube["markHours"] = markHours
     densityProfile = (
         tube[5]
@@ -1579,10 +1580,10 @@ def savePeriodogramData():
 
 
     setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list
-    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])-1  # Get tube number from selected tube name in tube list
+    tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
     method = experimentTabPlotTubeSelectionMethodList.value  # Get method from selection in method list
     periodogrammetryFileName = app.select_file(
-        title="Save densitometry as...",
+        title="Save data as...",
         folder=workingDir,
         filetypes=[["CSV", "*.csv"]],
         save=True,
@@ -1939,6 +1940,13 @@ def displayEditDataPopup():
         command=lambda:editDataPopupUpdate(action="remove"),
         width="fill"
     )
+    editDataTimesheetButton = PushButton(
+        editDataButtonsFrame,
+        text="Save Time Data",
+        pady=2,
+        command=lambda:editDataPopupUpdate(action="times"),
+        width="fill"
+    )
 
     editDataPopupUpdate()
 
@@ -1986,6 +1994,30 @@ def editDataPopupUpdate(action=None, newName=None):
                     if count == 0:
                         until = True
             saveExperimentFile()
+        case "times":
+            timeMarksFileName = app.select_file(
+                title="Save time data as...",
+                folder=workingDir,
+                filetypes=[["CSV", "*.csv"]],
+                save=True,
+                filename=(setName + "_time_marks_metadata"),
+            )
+            markHours = None
+            for tube in tubesMaster:
+                if tube["setName"] == setName:
+                    markHours = tube["markHours"][:len(tube["timeMarks"])]
+                    break
+            naiveHours = []
+            for index in range(len(markHours)):
+                naiveHours.append(markHours[0] + 24 * index)
+            with open(timeMarksFileName, 'w', newline='') as csvfile:  # Open csv file
+                rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+                rowWriter.writerow([setName, "", ""])
+                rowWriter.writerow(["Mark #", "Hours", "+/- 24 Hour Schedule"])  # Write title row to file
+                for index, hours in enumerate(markHours):
+                    deviation = hours - naiveHours[index]
+                    newLine = [str(index + 1), str(hours), str(deviation)]
+                    rowWriter.writerow(newLine)  # Write row to file
 
     #Get information for sets in file
     setsToDisplay = []  # Blank list of tube sets
