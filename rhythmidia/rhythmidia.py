@@ -1327,9 +1327,9 @@ def populatePlots():
     tubeDoubleFigurePlots[1] = tubeDoubleFigure.add_subplot(gridSpecLayout[1,0])  # Set up second plot in figure 
     tubeDoubleFigurePlots[2] = tubeDoubleFigure.add_subplot(gridSpecLayout[1,1])  # Set up second plot in figure 
     tubeDoubleFigurePlots[2].set_visible(False)
-    densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(0, 193, 12)))  # Set densitometry x axis major labels to every 12 hours
+    densitometryXAxisLabels = matplotlib.ticker.FixedLocator(list(range(0, 301, 12)))  # Set densitometry x axis major labels to every 12 hours
     densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])  # Set densitometry y axis major labels
-    densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(0, 193, 6)))  # Set densitometry x axis minor labels to every 3 hours
+    densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(0, 301, 6)))  # Set densitometry x axis minor labels to every 3 hours
     periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData["minPeriod"], periodData["maxPeriod"] + 1)))  # Set periodogram x axis major labels to each hour in range of hours
     cwtXAxisLabels = matplotlib.ticker.FixedLocator(list(range(int(numpy.min(cwtXAxis)), int(numpy.max(cwtXAxis)), 12)))
     tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Density\nprofile", color=appParameters["colorGraph"])  # Create first plot of densitometry
