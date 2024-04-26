@@ -9,13 +9,18 @@ Rhythmidia
 ### Race tube image analysis for circadian period elucidation in Python.
 ---
 ## Installation and Program Launch
-1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
+<!--1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
 2. Unzip rhythmidia-main.zip
     <br />a. This will create the folder rhythmidia-main
 3. Open the Terminal application on Mac
 4. Navigate to the rhythmidia-main folder in Terminal
 5. Run the command pip install .
-6. To run Rhythmidia, run the command 
+6. To run Rhythmidia, run the command -->
+1. In a conda environment running Python >=3.11, run the command 
+'''console
+pip install git+https://github.com/Pelham-Lab/rhythmidia.git
+'''
+2. To run Rhythmidia run the command 
 ```console
 python -c "import rhythmidia; rhythmidia.openAndRun()"
 ```
