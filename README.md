@@ -17,9 +17,9 @@ Rhythmidia
 5. Run the command pip install .
 6. To run Rhythmidia, run the command -->
 1. In a conda environment running Python >=3.11, run the command 
-'''console
+```console
 pip install git+https://github.com/Pelham-Lab/rhythmidia.git
-'''
+```
 2. To run Rhythmidia run the command 
 ```console
 python -c "import rhythmidia; rhythmidia.openAndRun()"
