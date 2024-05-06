@@ -2536,5 +2536,5 @@ experimentTabPlotCanvas = Canvas(experimentTabPlotFrame.tk, width=int(screenWidt
 experimentTabPlotFrame.add_tk_widget(experimentTabPlotCanvas)
 
 
-if __name__ == "__main__":
-    openAndRun()#this just runs the gui when you run the script; this is the function to run from command line when you have the full package installed
+# if __name__ == "__main__":
+#     openAndRun()#this just runs the gui when you run the script; this is the function to run from command line when you have the full package installed
