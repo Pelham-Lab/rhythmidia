@@ -2258,9 +2258,9 @@ homeTabText.when_clicked = selectHomeTab
 experimentTabText.when_clicked = selectExperTab
 
 directoryPath = os.path.dirname(__file__)
-rhythmidiaLogoPath = os.path.join(directoryPath, "rhythmidiaLogoBannerText.jpg")
-pelhamLogoPath = os.path.join(directoryPath, "pelhamLogoSquare.jpg")
-rhythmidiaClockLogoPath = os.path.join(directoryPath, "rhythmidiaLogoSquare.jpg")
+rhythmidiaLogoPath = os.path.join(directoryPath, "../images/icons/rhythmidiaLogoBannerText.jpg")
+pelhamLogoPath = os.path.join(directoryPath, "../images/icons/pelhamLogoSquare.jpg")
+rhythmidiaClockLogoPath = os.path.join(directoryPath, "../images/icons/rhythmidiaLogoSquare.jpg")
 logoFrame = Box(app, width="fill", height=50, align="bottom", layout="auto")
 logoFrame.bg = "grey95"
 rhythmidiaLogo = Picture(logoFrame, image=rhythmidiaLogoPath, width=181, height=50, align="left")

@@ -1,4 +1,4 @@
-<img src="rhythmidiaLogoBanner.jpg" width=50% margin-left=25%></img>
+<img src="images/icons/rhythmidiaLogoBanner.jpg" width=50% margin-left=25%></img>
 
 Rhythmidia
 ---
