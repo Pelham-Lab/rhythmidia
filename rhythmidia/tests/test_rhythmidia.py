@@ -24,17 +24,18 @@ def test_calculatePeriodData():
     filePath = os.path.join(directoryPath, "unitTestFile.rmex")
     openFileOutput = rhythmidia.openExperimentFile(specifyFile=filePath, reopen=True)
     correctCalculatedPeriods = [
-        (22.062491232117967, 21.01929236240736, 21.747914694534735),
-        (22.238809969841444, 22.869698195936238, 21.46045999051059),
-        (21.76142950634971, 22.64646372072278, 21.391344737477173),
-        (22.14988486993049, 22.671058631575914, 21.508816412681682),
-        (21.37948987689272, 22.57300508846683, 21.542899035706718),
-        (21.784646378480584, 22.945087589925073, 21.864250981064462)
+        (22.682618930565244, 23.35508428852803,	23.362599755420085, 23.50792258893955),
+        (22.368398260756614, 22.97912801657649,	23.01147697533878, 23.171660540172763),
+        (22.597961727572866, 22.972049674426234, 22.952756620895975, 23.04606201854591),
+        (22.03981605211146,	22.757865960877066,	22.78423695713816,	22.96773254349345),
+        (22.10750796876226,	22.718122801001243,	22.797811901413287,	22.87186139396556),
+        (21.830767892015825, 22.11624540453645,	22.173579331020168,	23.09250458099304)
         ]
     calculatedPeriods = []
     for tube in openFileOutput:
-        periodData = rhythmidia.calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"])[:3]
-        calculatedPeriods.append(periodData)
+        periodData = rhythmidia.calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], 0, 168)
+        periodsSlice = (periodData["periodLinearRegression"], periodData["periodSokoloveBushell"], periodData["periodLombScargle"], periodData["periodWavelet"])
+        calculatedPeriods.append(periodsSlice)
     
     assert calculatedPeriods == correctCalculatedPeriods
 

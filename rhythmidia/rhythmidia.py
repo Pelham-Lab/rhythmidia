@@ -84,7 +84,7 @@ def updateAppParameters():
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
 
 
-def openExperimentFile(reopen=False):
+def openExperimentFile(specifyFile=None, reopen=False):
     """Open an existing experiment file containing data from past images/tubes. Populate appropriate variables, including tubesMaster, with relevant information."""
     global openFile
     global workingDir
@@ -93,18 +93,23 @@ def openExperimentFile(reopen=False):
     cancelImageAnalysis()  # Zero out any existing information from a different open file or a newly analyzed race tube image
     tubesMaster = []  # Blank out global master tube list in preparation for population from opened file
     #Ensure there is a file to open
-    if openFile == "" or reopen is False:  # If no file is currently open or if file name is specified because it is being reopened after saving
-        openFile = app.select_file(
+    fileToOpen = ""
+    if specifyFile:
+        fileToOpen = specifyFile
+    else:
+        fileToOpen = openFile
+    if fileToOpen == "" or reopen is False:  # If no file is currently open or if file name is specified because it is being reopened after saving
+        fileToOpen = app.select_file(
             title="Select experiment file",
             folder=workingDir,
             filetypes=[["Rhythmidia Experiment", "*.rmex"]],
             save=False,
             filename="",
         )  # Prompt user by popup to select experiment file from working directory and save name as openFile
-    if openFile == "":  # If openFile remains blank after this (because user canceled popup)
+    if fileToOpen == "":  # If openFile remains blank after this (because user canceled popup)
         return  # Abort function
     
-    with open(openFile, newline="") as experimentFile:  # Open user-specified txt experiment file
+    with open(fileToOpen, newline="") as experimentFile:  # Open user-specified txt experiment file
         tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %; generates iterable of all race tube datasets in specified experiment file
         for tube in tubesInFile:  # For each line of experiment file (each containing one race tube's data)
             parsedTube = parseTubeFromFile(tube)
@@ -112,6 +117,8 @@ def openExperimentFile(reopen=False):
     populateExperimentDataTable()  # Populate experiment data table
     populateStatisticalAnalysisLists()  # Populate statistical analysis frame lists
     populatePlotTubeSelectionLists()  # Populate plot data frame lists
+
+    return tubesMaster
 
 
 def parseTubeFromFile(tube):
@@ -1464,7 +1471,8 @@ def saveStatisticalAnalysisData():
     fileRows = []  # Blank list of periods for analysis
     for tube in tubesMaster:  # For each tube in master tubes list
         if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
-            fileRow = [tube["setName"], str(tube["tubeNumber"]+1)] + list(calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))["periodLinearRegression", "periodSokoloveBushell", "periodLombScargle", "periodWavelet"])  # List of set name, tube name, and all three periods for each tube
+            periods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
+            fileRow = [tube["setName"], str(tube["tubeNumber"]+1), periods["periodLinearRegression"], periods["periodSokoloveBushell"], periods["periodLombScargle"], periods["periodWavelet"]]  # List of set name, tube name, and all three periods for each tube
             fileRows.append(fileRow)  # Add selected period to list of periods for analysis
     
     #Create file contents
