@@ -22,7 +22,7 @@ pip install git+https://github.com/Pelham-Lab/rhythmidia.git
 ```
 2. To run Rhythmidia run the command 
 ```console
-python -c "import rhythmidia; rhythmidia.openAndRun()"
+rhythmidia
 ```
 <br />  NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
 
