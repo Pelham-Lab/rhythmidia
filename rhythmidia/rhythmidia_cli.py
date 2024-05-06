@@ -1,4 +1,4 @@
-from rhythmidia.rhythmidia import openAndRun
+from rhythmidia.rhythmidia_gui import openAndRun
 from argparse import ArgumentParser
 
 def run():
