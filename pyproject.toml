@@ -98,4 +98,4 @@ default-tag = "1.0.0"
 file = "rhythmidia/_version.py"
 
 [project.scripts]
-rhythmidia_cli = "rhythmidia.rhythmidia_cli:run"
+rhythmidia = "rhythmidia.rhythmidia:run"
