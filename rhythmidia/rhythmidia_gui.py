@@ -108,8 +108,10 @@ def openExperimentFile(specifyFile=None, reopen=False):
         )  # Prompt user by popup to select experiment file from working directory and save name as openFile
     if fileToOpen == "":  # If openFile remains blank after this (because user canceled popup)
         return  # Abort function
+    else:
+        openFile = fileToOpen
     
-    with open(fileToOpen, newline="") as experimentFile:  # Open user-specified txt experiment file
+    with open(openFile, newline="") as experimentFile:  # Open user-specified txt experiment file
         tubesInFile = csv.reader(experimentFile, delimiter="%")  # Define csv reader with delimiter %; generates iterable of all race tube datasets in specified experiment file
         for tube in tubesInFile:  # For each line of experiment file (each containing one race tube's data)
             parsedTube = parseTubeFromFile(tube)
@@ -200,11 +202,11 @@ def saveExperimentFile():
     global openFile
     global workingDir
     global tubesMaster
-
+    print(str(openFile))
     if openFile == "":  # If no file is currently opened in Rhythmidia
         saveExperimentFileAs("")  # Prompt user to save as new file
     else:  # If a file is already open
-        with open(openFile, newline="", mode="w", encoding='utf-16') as experimentFile:  # Open current experiment file
+        with open(openFile, newline="", mode="w") as experimentFile:  # Open current experiment file
             writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer variable with % delimiter
             for tube in tubesMaster:  # For each race tube data dictionary in global master tube list
                 tubeValuesList = list(tube.values())  # Convert data dictionary
@@ -1978,6 +1980,8 @@ def editDataPopupUpdate(action=None, newName=None):
     
     global tubesMaster
     global editDataSetList
+    global openFile
+    print(str(openFile))
 
     setName = editDataSetList.value
     match action:
