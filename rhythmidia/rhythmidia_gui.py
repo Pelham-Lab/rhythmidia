@@ -1860,7 +1860,7 @@ def helpMain():
 
     
     webbrowser.open(
-        "https://github.com/PelhamLab", new=0, autoraise=True
+        "https://github.com/Pelham-Lab/rhythmidia", new=0, autoraise=True
     )
 
 
@@ -2235,7 +2235,7 @@ menubar = MenuBar(
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
             ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
-        [["Help 1", helpMain]],
+        [["Documentation", helpMain]],
     ]
 )  # Set up os menu bar for application
 
