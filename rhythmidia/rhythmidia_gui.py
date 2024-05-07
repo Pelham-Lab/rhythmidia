@@ -79,7 +79,7 @@ def updateAppParameters():
     parametersPath = os.path.join(directoryPath, "parameters.txt")
     #Open parameters file and overwrite from global app parameters dictionary
     with open(parametersPath, newline="", mode="w") as parametersFile:  # Open parameters.txt file
-        writer = csv.writer(parametersFile, delimiter="=")  # Define csv writer
+        writer = csv.writer(parametersFile, delimiter="=", encoding='utf-16')  # Define csv writer
         for key in appParameters:  # For each key in parameters dictionary
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
 
@@ -94,10 +94,10 @@ def openExperimentFile(specifyFile=None, reopen=False):
     tubesMaster = []  # Blank out global master tube list in preparation for population from opened file
     #Ensure there is a file to open
     fileToOpen = ""
-    if specifyFile:
-        fileToOpen = specifyFile
-    else:
+    if specifyFile is None:
         fileToOpen = openFile
+    else:
+        fileToOpen = specifyFile
     if fileToOpen == "" or reopen is False:  # If no file is currently open or if file name is specified because it is being reopened after saving
         fileToOpen = app.select_file(
             title="Select experiment file",
@@ -204,12 +204,12 @@ def saveExperimentFile():
     if openFile == "":  # If no file is currently opened in Rhythmidia
         saveExperimentFileAs("")  # Prompt user to save as new file
     else:  # If a file is already open
-        with open(openFile, newline="", mode="w") as experimentFile:  # Open current experiment file
+        with open(openFile, newline="", mode="w", encoding='utf-16') as experimentFile:  # Open current experiment file
             writer = csv.writer(experimentFile, delimiter="%")  # Define csv writer variable with % delimiter
             for tube in tubesMaster:  # For each race tube data dictionary in global master tube list
                 tubeValuesList = list(tube.values())  # Convert data dictionary
                 writer.writerow(tubeValuesList)  # Write new line for tube to experiment file
-        openExperimentFile(True)  # Open current experiment again to update application
+        openExperimentFile(reopen=True)  # Open current experiment again to update application
 
 
 def saveExperimentFileAs(name=""):
@@ -1122,7 +1122,7 @@ def saveExperimentData():
                 str(tube["growthRate"])
             ]
         )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
-    with open(dataFileName, 'w', newline='') as csvfile:  # Open csv file
+    with open(dataFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
         for row in tableRows:
             rowWriter.writerow(row)  # Write row to file
@@ -1472,7 +1472,7 @@ def saveStatisticalAnalysisData():
     for tube in tubesMaster:  # For each tube in master tubes list
         if (tube["setName"] + " | " + str(tube["tubeNumber"] + 1)) in tubesSelected:  # If tube and set name match a selected tube option
             periods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
-            fileRow = [tube["setName"], str(tube["tubeNumber"]+1), periods["periodLinearRegression"], periods["periodSokoloveBushell"], periods["periodLombScargle"], periods["periodWavelet"]]  # List of set name, tube name, and all three periods for each tube
+            fileRow = [tube["setName"], str(tube["tubeNumber"]+1), round(periods["periodLinearRegression"], 3), round(periods["periodSokoloveBushell"], 3), round(periods["periodLombScargle"], 3), round(periods["periodWavelet"], 3)]  # List of set name, tube name, and all three periods for each tube
             fileRows.append(fileRow)  # Add selected period to list of periods for analysis
     
     #Create file contents
@@ -1493,7 +1493,7 @@ def saveStatisticalAnalysisData():
         save=True,
         filename=("_".join(setNamesSelected) + "_period_data"),
     )  # Get user selection of file name and location with app popup
-    with open(dataFileName, 'w', newline='') as dataFile:  # Open user-specified csv file location
+    with open(dataFileName, 'w', newline='', encoding='utf-16') as dataFile:  # Open user-specified csv file location
         rowWriter = csv.writer(dataFile, delimiter=',')  # Write rows delimited by ","
         rowWriter.writerow(["Pack Name", "Tube #", "τ (hrs) (Linear Regression)", "τ (hrs) (Sokolove-Bushell)", "τ (hrs) (Lomb-Scargle)"])  # Write title row
         for fileRow in fileRows:  # For each file row
@@ -1564,10 +1564,9 @@ def saveDensitometryData():
     densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
     densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
 
-    with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
+    with open(densitometryFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
-        rowWriter.writerow(["Time (hrs)", "Density Profile", "No time marks"])  # Write title row to file
-        #rowWriter.writerow(["Time (hrs)", "Density Profile"])  # Write title row to file
+        rowWriter.writerow(["Time (hrs)", "Density Profile", "Interpolated Density Profile (No Time Marks)"])  # Write title row to file
         for index in range(len(densitometryClipped)):
             newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileSmooth[index]]
             #newLine = [densitometryXValsHours[index], densitometryClipped[index]]
@@ -1632,7 +1631,7 @@ def savePeriodogramData():
             periodogramXVals.append(xVal)  # Add x value to periodogram x values
             periodogramYVals.append(calculatedPeriodogramYVals[index])  # Add y value to periodogram y values
             periodogramFrequencies.append(calculatedPeriodogramFrequencies[index])  # Add frequency to periodogram frequencies
-    with open(periodogrammetryFileName, 'w', newline='') as csvfile:  # Open file to save data
+    with open(periodogrammetryFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open file to save data
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write csv delimited by ","
         if method == ["periodogramChiSquaredSokoloveBushell", "frequenciesSokoloveBushell"]:  # If using S-B periodogram
             rowWriter.writerow(["Frequency", "Period (hrs)", "Chi Squared"])  # Write S-B periodogram title row
@@ -2018,7 +2017,7 @@ def editDataPopupUpdate(action=None, newName=None):
             naiveHours = []
             for index in range(len(markHours)):
                 naiveHours.append(markHours[0] + 24 * index)
-            with open(timeMarksFileName, 'w', newline='') as csvfile:  # Open csv file
+            with open(timeMarksFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
                 rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
                 rowWriter.writerow([setName, "", ""])
                 rowWriter.writerow(["Mark #", "Hours", "+/- 24 Hour Schedule"])  # Write title row to file
