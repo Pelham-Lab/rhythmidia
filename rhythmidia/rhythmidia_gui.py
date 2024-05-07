@@ -2231,6 +2231,7 @@ menubar = MenuBar(
             ["Close Experiment File          (⌘C)", closeExperimentFile],
             ["Save Experiment                (⌘S)", saveExperimentFile],
             ["Save Experiment As...         (\u2191⌘S)", saveExperimentFileAs],
+            ["Edit Packs", displayEditDataPopup],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
             ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
@@ -2395,11 +2396,11 @@ experimentTabTableParamsRowSpacer = Box(experimentTabTableParamsRow, height="fil
 experimentTabTableParamsRecalcButton = PushButton(experimentTabTableParamsRow, text="Recalculate Periods", align="left", command=populateExperimentDataTable)
 experimentTabTableParamsRecalcButton.text_size = 13
 experimentTabTableParamsRecalcButton.font = "Arial bold"
-experimentTabTableFrameSpacer = Box(experimentTabTableParamsRow, height="fill", width=15, align="left")
-experimentTabEditTubesButton = PushButton(experimentTabTableParamsRow, text="Edit Packs", align="left", command=displayEditDataPopup)
-experimentTabEditTubesButton.text_size = 13
-experimentTabEditTubesButton.font = "Arial bold"
-experimentTabTableFrameVerticalSpacer2 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
+#experimentTabTableFrameSpacer = Box(experimentTabTableParamsRow, height="fill", width=15, align="left")
+#experimentTabEditTubesButton = PushButton(experimentTabTableParamsRow, text="Edit Packs", align="left", command=displayEditDataPopup)
+#experimentTabEditTubesButton.text_size = 13
+#experimentTabEditTubesButton.font = "Arial bold"
+#experimentTabTableFrameVerticalSpacer2 = Box(experimentTabTableFrame, height=2, width="fill", align="bottom")
 
 
 experimentTabTableTextBox = TextBox(experimentTabTableFrame, multiline=True, width="fill", height="fill", align="top")
