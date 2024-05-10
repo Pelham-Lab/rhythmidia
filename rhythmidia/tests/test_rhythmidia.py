@@ -68,9 +68,6 @@ def test_qIdentifyHorizontalLines():
     testImageFile = os.path.join(os.path.dirname(__file__), "unitTestImage.jpg")
     testImage = numpy.array(Image.open(testImageFile).resize((1160, 400)).convert("L"))
     horizontalLineSlopes, horizontalLineIntercepts, meanTubeSlope = rhythmidia.qIdentifyHorizontalLines(testImage)
-    print(len(horizontalLineIntercepts)) 
-    print(len(horizontalLineIntercepts))
-    print(abs(meanTubeSlope))
     
     assert len(horizontalLineIntercepts) <= 9 and len(horizontalLineIntercepts) > 4 and abs(meanTubeSlope) < 2
 
