@@ -3,21 +3,73 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Rhythmidia's documentation!
+Welcome to rhythmidia's documentation!
 =========================================================
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card:: Getting Started
+      :margin: 0 3 0 0
+      
+      Learn the basics of using rhythmidia.
+
+      .. button-link:: ./getting_started.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Getting Started Guide
+
+      
+
+    .. grid-item-card::  User Guide
+      :margin: 0 3 0 0
+      
+      An in-depth guide for users.
+
+      .. button-link:: ./user_guide.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the User Guide
+      
+      
+
+    .. grid-item-card:: API Reference
+      :margin: 0 3 0 0
+      
+      How to use the API of rhythmidia.
+
+      .. button-link:: ./api.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the API Reference.
+
+      
+
+    .. grid-item-card::  Developer Guide
+      :margin: 0 3 0 0
+      
+      How to contribute to rhythmidia.
+
+      .. button-link:: ./developer_guide.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Developer Guide
+
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :hidden:
+   :titlesonly:
 
    getting_started
+   user_guide
    api
+   developer_guide
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

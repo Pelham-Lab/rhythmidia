@@ -1,12 +1,16 @@
-name: docs
+name: docs_rhythmidia
 channels:
+
+  - defaults
 dependencies:
     # Base depends
   - python
   - pip
+  
 
 
 
     # Pip-only installs
-  #- pip:
+  - pip:
+    - -e ../
 

@@ -17,13 +17,13 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import chronidia
+import rhythmidia
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Chronidia'
-copyright = ("2023, Alex Keeley. Project structure based on the "
+project = 'rhythmidia'
+copyright = ("2024, Alex Keeley. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.1")
 author = 'Alex Keeley'
 
@@ -50,7 +50,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
+    'sphinx_design',
+    'sphinx_copybutton',    
 ]
+
 
 autosummary_generate = True
 napoleon_google_docstring = False
@@ -90,7 +93,7 @@ pygments_style = 'default'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -117,7 +120,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'chronidiadoc'
+htmlhelp_basename = 'rhythmidiadoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -144,8 +147,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'chronidia.tex', 'Chronidia Documentation',
-     'chronidia', 'manual'),
+    (master_doc, 'rhythmidia.tex', 'rhythmidia Documentation',
+     'rhythmidia', 'manual'),
 ]
 
 
@@ -154,7 +157,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'chronidia', 'Chronidia Documentation',
+    (master_doc, 'rhythmidia', 'rhythmidia Documentation',
      [author], 1)
 ]
 
@@ -165,8 +168,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'chronidia', 'Chronidia Documentation',
-     author, 'chronidia', 'Race tube image analysis and period elucidation in Python.',
+    (master_doc, 'rhythmidia', 'rhythmidia Documentation',
+     author, 'rhythmidia', 'Race tube image analysis for circadian period elucidation in Python.',
      'Miscellaneous'),
 ]
 
