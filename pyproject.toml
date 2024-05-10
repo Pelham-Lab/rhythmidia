@@ -21,14 +21,15 @@ classifiers = [
 requires-python = ">=3.10"
 # Declare any run-time dependencies that should be installed with the package.
 dependencies = [
-    "importlib-resources;python_version>='3.10'",
+    "importlib-resources;python_version>='3.11'",
     "numpy",
     "matplotlib",
     "scipy",
     "pyautogui",
     "scikit-image",
     "guizero",
-    "pytest"
+    "pytest",
+    "PyWavelets"
 ]
 
 # Update the urls once the hosting is set up.
@@ -72,10 +73,10 @@ where = ["."]
 rhythmidia = [
     "py.typed",
     "parameters.txt",
-    "rhythmidiaLogoBannerText.jpg",
-    "rhythmidiaLogoBannerText.jpg",
-    "rhythmidiaLogoSquare.jpg",
-    "pelhamLogoSquare.jpg"
+    "../images/icons/rhythmidiaLogoBannerText.jpg",
+    "../images/icons/rhythmidiaLogoBannerText.jpg",
+    "../images/icons/rhythmidiaLogoSquare.jpg",
+    "../images/icons/pelhamLogoSquare.jpg"
 ]
 
 [tool.versioningit]
@@ -95,3 +96,6 @@ default-tag = "1.0.0"
 
 [tool.versioningit.write]
 file = "rhythmidia/_version.py"
+
+[project.scripts]
+rhythmidia = "rhythmidia.rhythmidia:run"

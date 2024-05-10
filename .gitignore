@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+ Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -109,3 +109,5 @@ ENV/
 */_version.py
 
 *.DS_store
+*rhythmidia/parameters.txt
+
