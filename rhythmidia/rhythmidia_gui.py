@@ -63,6 +63,10 @@ def setWorkingDirectory():
     global app
     
     workingDir = app.select_folder(title="Please select working directory:", folder="/")  # Set working directory variable to user-specified directory via file selection popup
+    
+    if not workingDir:
+        sys.exit()
+        
     appParameters["workingDir"] = workingDir  # Populate global parameters dictionary with user-specified working directory
     updateAppParameters()  # Update app parameters
 

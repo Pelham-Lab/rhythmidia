@@ -1,6 +1,0 @@
-workingDir=/Users/akeeley/Desktop/2_19_24_328-4C_Data
-colorGraph=#000000
-colorHoriz=#00f200
-colorVert=#ff0017
-colorBand=#0090fb
-heatmap=viridis
