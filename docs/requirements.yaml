@@ -6,6 +6,14 @@ dependencies:
     # Base depends
   - python
   - pip
+  - numpy
+  - matplotlib
+  - scipy
+  - pyautogui
+  - scikit-image
+  - guizero
+  - pytest
+  - PyWavelets
   
 
 
