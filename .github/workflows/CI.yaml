@@ -56,7 +56,7 @@ jobs:
         # conda setup requires this special shell
         shell: bash -l {0}
         run: |
-          pytest -v --cov=chronidia --cov-report=xml --color=yes chronidia/tests/
+          pytest -v --cov=rhythmidia --cov-report=xml --color=yes rhythmidia/tests/
 
       - name: CodeCov
         uses: codecov/codecov-action@v1
