@@ -1,0 +1,8 @@
+numpy
+matplotlib
+scipy
+pyautogui
+scikit-image
+guizero
+pytest
+PyWavelets
