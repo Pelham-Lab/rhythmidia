@@ -2,20 +2,9 @@
 
 Rhythmidia
 ---
-<!--[//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/rhythmidia/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/Rhythmidia/branch/main)-->
-
 ### Race tube image analysis for circadian period elucidation in Python.
 ---
 ## Installation and Program Launch
-<!--1. Download the rhythmidia-main.zip file and move it to your Documents folder (or location of choice)
-2. Unzip rhythmidia-main.zip
-    <br />a. This will create the folder rhythmidia-main
-3. Open the Terminal application on Mac
-4. Navigate to the rhythmidia-main folder in Terminal
-5. Run the command pip install .
-6. To run Rhythmidia, run the command -->
 1. Rhythmidia must be installed in a Python environment running Python 3.11 or higher using pip. Rhythmidia runs on Unix-like operating systems including macOS and Linux. In order to install Rhythmidia, simply run the command: 
 ```console
 pip install rhythmidia
@@ -113,7 +102,7 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
-V0.01: 
+V0.0.1: First public, stable release concurrent with upload to PyPI.
 
 
 ---
