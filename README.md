@@ -16,7 +16,7 @@ Rhythmidia
 4. Navigate to the rhythmidia-main folder in Terminal
 5. Run the command pip install .
 6. To run Rhythmidia, run the command -->
-1. In a conda environment running Python >=3.11, run the command 
+1. Rhythmidia must be installed in a Python environment running Python 3.11 or higher using pip. Rhythmidia runs on Unix-like operating systems including macOS and Linux. In order to install Rhythmidia, simply run the command: 
 ```console
 pip install rhythmidia
 ```
