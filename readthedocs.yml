@@ -4,6 +4,7 @@ version: 2
 
 build:
   image: latest
+  os: MacOS
 
 python:
   version: 3.11
