@@ -1886,7 +1886,7 @@ def graphicsPreferencesPrompt():
 
     
     graphicsPreferencesWindow = Window(app, title="Graphics Preferences", layout="grid", width=375, height=300)  # Create popup window
-    graphicsPreferencesWindow.show()  # Display popup window
+    graphicsPreferencesWindow.show(wait = True)  # Display popup window
 
     changeGraphColorButton = PushButton(graphicsPreferencesWindow, grid=[0,0], text="Graph Color", height=0, width=20, command=colorPickHandler, args=[0])
     changeGraphColorButton.text_size = 13
