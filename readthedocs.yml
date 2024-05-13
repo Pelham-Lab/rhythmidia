@@ -8,6 +8,16 @@ build:
   tools:
     python: "3.11"
 
+# Build from the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+  
+# Explicitly set the version of Python and its requirements
+python:
+  install:
+    - requirements: docs/requirements.txt	  
+
+
 #python:
 #  version: "3.11"
 #  install:
