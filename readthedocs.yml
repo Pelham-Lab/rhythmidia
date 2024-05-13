@@ -8,11 +8,5 @@ build:
   tools:
     python: "3.11"
 
-python:
-  version: "3.11"
-  install:
-    - method: pip
-      path: .
-
 conda:
   environment: docs/requirements.yaml
