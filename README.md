@@ -54,7 +54,8 @@ rhythmidia
 7. When you are satisfied with the positions of all tube demarcation lines, click the button labeled “Proceed”
 8. Repeat steps 6-8 for time marks (red) and for bands (orange)<br />
 ![Time Mark Identification](images/screenshots/ImageAnal3.png)
-![Banding Identification](images/screenshots/ImageAnal5.png)
+![Banding Identification](images/screenshots/ImageAnal4.png)
+![Time Marks and Banding Identification](images/screenshots/ImageAnal5.png)
     NOTE: At any time before saving tubes to the file, you may click the button labeled “Cancel image analysis”, which will reset the image analysis process and remove your uploaded image, while leaving open any open experiment file<br />
     NOTE: Be certain to record any differences in marking times in the mark sheet (left) before proceeding further. If tubes were marked at the same time every day, leave as the default setting (0 for all).<br />
     NOTE: The time marks will temporarily disappear while marking conidial peaks. 
