@@ -45,8 +45,8 @@ rhythmidia
 3. Rotate your image so that the growth direction of the tubes is from left to right across your screen<br />
     a. To rotate your image 90 degrees clockwise, click the button labeled “Rotate”<br />
 4. When you are satisfied with your image’s orientation, click the button labeled “Lock & Analyze Image”
-5. Rhythmidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes.
-    a. One line between each two tubes.
+5. Rhythmidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes
+    a. One line between each two tubes
 ![Horizontal Line Identification](images/screenshots/ImageAnal2.png)
 6. You will be directed to verify these lines:<br />
     a. To remove an incorrect line, simply click on the line<br />
@@ -57,11 +57,12 @@ rhythmidia
 ![Banding Identification](images/screenshots/ImageAnal4.png)
 ![Time Marks and Banding Identification](images/screenshots/ImageAnal5.png)
     NOTE: At any time before saving tubes to the file, you may click the button labeled “Cancel image analysis”, which will reset the image analysis process and remove your uploaded image, while leaving open any open experiment file<br />
-    NOTE: Be certain to record any differences in marking times in the mark sheet (left) before proceeding further. If tubes were marked at the same time every day, leave as the default setting (0 for all).<br />
-    NOTE: The time marks will temporarily disappear while marking conidial peaks. 
-10. After you are satisfied with the positions of the bands and click “Proceed”, you will be able to see a preliminary calculation of the period of each tube below
+    NOTE: Be certain to record any differences in marking times in the mark sheet (left) before proceeding further. If tubes were marked at the same time every day, leave as the default setting (0 for all)<br />
+    NOTE: The time marks will temporarily disappear while marking conidial peaks.
+9. After you are satisfied with the positions of the bands and click “Proceed”, you will be able to see a preliminary calculation of the period of each tube below<br />
+    NOTE: if there is an issue at this stage (i.e. a missed or duplicated identifier) cancel image analysis and reload the image
 ![Preliminary Data](images/screenshots/ImageAnal6.png)
-11. You will now have the option to click the button labeled “Save Tubes to File”<br />
+10. You will now have the option to click the button labeled “Save Tubes to File”<br />
     a.  This will bring up a popup asking for a name for the pack of tubes in the current image before it saves them to file<br />
     ![Pack Name Prompt](images/screenshots/PackName.png)
     <br />b. If you are working within an existing experiment file, this will simply add this pack to the file and update it<br />
@@ -90,7 +91,8 @@ rhythmidia
     c. Click the button labeled “Save Plot” to save an image of the dual plot in file format of choice<br />
     d. Click the button labeled “Save Densitometry” to save a .csv of the densitometry data<br />
     e. Click the button labeled “Save Periodogrammetry” to save a .csv of the periodogrammetry data<br />
-5. At the bottom left is a button labeled "Display Pack Image". This button will display a popup window containing the greyscale version of the image corresponding to whichever pack is selected in the bottom left list that was the exact image used for analysis.
+5. At the bottom left is a button labeled "Display Pack Image"
+    a. This button will display a popup window containing the greyscale version of the image corresponding to whichever pack is selected in the bottom left list that was the exact image used for analysis<br />
 ![Image Popup](images/screenshots/PackImagePopup.png)
 
 ## Functions Overview
