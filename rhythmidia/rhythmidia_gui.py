@@ -83,7 +83,7 @@ def updateAppParameters():
     parametersPath = os.path.join(directoryPath, "parameters.txt")
     #Open parameters file and overwrite from global app parameters dictionary
     with open(parametersPath, newline="", mode="w") as parametersFile:  # Open parameters.txt file
-        writer = csv.writer(parametersFile, delimiter="=", encoding='utf-16')  # Define csv writer
+        writer = csv.writer(parametersFile, delimiter="=")  # Define csv writer
         for key in appParameters:  # For each key in parameters dictionary
             writer.writerow([key, appParameters[key]])  # Write as a line of parameters.txt
 
