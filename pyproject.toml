@@ -10,9 +10,7 @@ description = "Race tube image analysis and period elucidation in Python."
 dynamic = ["version"]
 readme = "README.md"
 authors = [
-    { name = "Alex Keeley", email = "alex.k@wustl.edu" },
-    { name = "Jeffrey Lotthammer, email = "j.lotthammer@wustl.edu" },
-    { name = "Jacqueline Pelham", email = "pelham@wustl.edu" }
+    { name = "Alex Keeley", email = "alex.k@wustl.edu" }
 ]
 license = { text = "MIT" }
 # See https://pypi.org/classifiers/
