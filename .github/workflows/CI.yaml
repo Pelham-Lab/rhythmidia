@@ -1,6 +1,6 @@
 name: CI
 
-on:
+off:
   # GitHub has started calling new repo's first branch "main" https://github.com/github/renaming
   # The cookiecutter uses the "--initial-branch" flag when it runs git-init
   push:
@@ -23,8 +23,8 @@ jobs:
       matrix:
         #os: [macOS-latest, ubuntu-latest, windows-latest]
         #python-version: [3.8, 3.9, "3.10"]
-        os: [macOS-latest]
-        python-version: [3.11, 3.12]
+        os: [macOS-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v3
