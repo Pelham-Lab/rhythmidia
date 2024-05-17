@@ -21,6 +21,12 @@ import pywt
 import webbrowser
 
 
+#Check for display, and quit if not present
+display = os.environ.get('DISPLAY')
+if not display:
+    sys.exit
+
+
 #Set initial screen height and width to monitor dimensions
 screenWidth = pyautogui.size().width
 screenHeight = pyautogui.size().height
@@ -2209,11 +2215,7 @@ def setupTasksOnOpenAndRun():  # Tasks to run on opening app
 
 def openAndRun():
     setupTasksOnOpenAndRun()
-    display = os.environ.get('DISPLAY')
-    if display:
-        app.display()
-    else:
-        sys.exit
+    app.display()
 
 
 # Create app object
