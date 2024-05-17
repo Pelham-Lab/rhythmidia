@@ -8,15 +8,7 @@ build:
     python: "3.11"
   jobs: 
     pre_install:
-      - pip install scipy
-      - pip install numpy 
       - pip install sphinx-rtd-theme
-      - pip install matplotlib
-      - pip install pyautogui
-      - pip install scikit-image
-      - pip install guizero
-      - pip install pytest
-      - pip install PyWavelets
 
 # Build from the docs/ directory with Sphinx
 sphinx:
@@ -26,5 +18,5 @@ python:
   install:
     - requirements: docs/requirements.txt
 
-conda:
-  environment: docs/requirements.yaml
+#conda:
+#  environment: docs/requirements.yaml
