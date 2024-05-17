@@ -1,6 +1,10 @@
+import sys
 from guizero import *
 from tkinter import Canvas
-import pyautogui
+try:
+    import pyautogui
+except KeyError:
+    sys.exit()
 from PIL import Image, ImageEnhance
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
@@ -11,7 +15,6 @@ import matplotlib.ticker
 import numpy
 import csv
 import os
-import sys
 import copy
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
