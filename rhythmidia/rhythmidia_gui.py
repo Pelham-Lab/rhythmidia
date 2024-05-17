@@ -4,7 +4,7 @@ from tkinter import Canvas
 try:
     import pyautogui
 except KeyError:
-    sys.exit()
+    pass
 from PIL import Image, ImageEnhance
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
