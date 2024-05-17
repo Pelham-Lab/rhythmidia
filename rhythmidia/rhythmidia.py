@@ -1,3 +1,9 @@
+import sys
+disp = True
+try:
+    import pyautogui
+except KeyError:
+    disp = False
 from rhythmidia.rhythmidia_gui import openAndRun
 from argparse import ArgumentParser
 
@@ -6,4 +12,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    if disp:
+        run()
