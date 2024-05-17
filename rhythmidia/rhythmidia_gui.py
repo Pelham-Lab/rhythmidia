@@ -2209,8 +2209,11 @@ def setupTasksOnOpenAndRun():  # Tasks to run on opening app
 
 def openAndRun():
     setupTasksOnOpenAndRun()
-    app.display()
-
+    display = os.environ.get('DISPLAY')
+    if display:
+        app.display()
+    else:
+        sys.exit
 
 
 # Create app object
