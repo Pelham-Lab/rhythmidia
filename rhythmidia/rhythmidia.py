@@ -4,7 +4,10 @@ try:
     import pyautogui
 except KeyError:
     disp = False
-from rhythmidia.rhythmidia_gui import openAndRun
+try:
+    from rhythmidia.rhythmidia_gui import openAndRun
+except KeyError:
+    disp = False
 from argparse import ArgumentParser
 
 def run():
