@@ -76,7 +76,8 @@ rhythmidia = [
     "../images/icons/rhythmidiaLogoBannerText.jpg",
     "../images/icons/rhythmidiaLogoBannerText.jpg",
     "../images/icons/rhythmidiaLogoSquare.jpg",
-    "../images/icons/pelhamLogoSquare.jpg"
+    "../images/icons/pelhamLogoSquare.jpg",
+    "../images/screenshots"
 ]
 
 [tool.versioningit]
