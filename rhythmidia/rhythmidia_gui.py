@@ -35,6 +35,7 @@ if 'pyautogui' in sys.modules:
     screenWidth = pyautogui.size().width
     screenHeight = pyautogui.size().height
 else:
+    sys.exit()
     screenWidth = 1500
     screenHeight = 1500
 #Set numpy print maximum size to largest value system can handle
