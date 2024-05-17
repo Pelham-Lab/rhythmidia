@@ -4,7 +4,7 @@ from tkinter import Canvas
 try:
     import pyautogui
 except KeyError:
-    pass
+    sys.exit()
 from PIL import Image, ImageEnhance
 from skimage.feature import canny
 from skimage.transform import probabilistic_hough_line
@@ -24,20 +24,9 @@ import pywt
 import webbrowser
 
 
-#Check for display, and quit if not present
-display = os.environ.get('DISPLAY')
-if not display:
-    sys.exit
-
-
-#Set initial screen height and width to monitor dimensions, or to defaults if no monitor exists
-if 'pyautogui' in sys.modules:
-    screenWidth = pyautogui.size().width
-    screenHeight = pyautogui.size().height
-else:
-    sys.exit()
-    screenWidth = 1500
-    screenHeight = 1500
+#Set initial screen height and width to monitor dimensions
+screenWidth = pyautogui.size().width
+screenHeight = pyautogui.size().height
 #Set numpy print maximum size to largest value system can handle
 numpy.set_printoptions(threshold=sys.maxsize)
 #Set csv field maximum size to largest value 32-bit systems can handle
