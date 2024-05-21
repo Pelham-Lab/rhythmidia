@@ -34,37 +34,12 @@ Welcome to rhythmidia's documentation!
 
          To the User Guide
       
-      
 
-    .. grid-item-card:: API Reference
-      :margin: 0 3 0 0
-      
-      How to use the API of rhythmidia.
-
-      .. button-link:: ./api.html
-         :color: primary
-         :outline:
-         :expand:
-
-         To the API Reference.
-
-      
-
-    .. grid-item-card::  Developer Guide
-      :margin: 0 3 0 0
-      
-      How to contribute to rhythmidia.
-
-      .. button-link:: ./developer_guide.html
-         :color: primary
-         :outline:
-         :expand:
-
-         To the Developer Guide
 
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
    :hidden:
    :titlesonly:
 
