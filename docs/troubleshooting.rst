@@ -2,8 +2,10 @@ Troubleshooting
 ===============
 
 
-You might choose to write an overview tutorial or set of tutorials.
+Issue 1
+---------------
+Here's what's wrong and how to fix it!
 
-.. code-block:: python
-    
-    import rhythmidia
+Issue 1
+---------------
+Here's what's wrong and how to fix it!
