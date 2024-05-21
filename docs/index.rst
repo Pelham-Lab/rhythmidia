@@ -101,3 +101,6 @@ Welcome to rhythmidia's documentation!
    getting_started
    user_guide
    changelog
+   citing
+   acknowledgements
+   troubleshooting
