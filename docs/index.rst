@@ -33,7 +33,20 @@ Welcome to rhythmidia's documentation!
          :expand:
 
          To the User Guide
+
+
+
+    .. grid-item-card::  Changelog
+      :margin: 0 3 0 0
       
+      Documentation of past changes to rhythmidia.
+
+      .. button-link:: ./changelog.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Changelog
 
 
 
@@ -45,4 +58,4 @@ Welcome to rhythmidia's documentation!
 
    getting_started
    user_guide
-
+   changelog
