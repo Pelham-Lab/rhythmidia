@@ -70,6 +70,4 @@ Welcome to rhythmidia's documentation!
 
    getting_started
    user_guide
-   api
-   developer_guide
 
