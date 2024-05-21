@@ -64,6 +64,34 @@ Welcome to rhythmidia's documentation!
 
 
 
+    .. grid-item-card::  Acknowledgements
+      :margin: 0 3 0 0
+      
+      Documentation of past changes to rhythmidia.
+
+      .. button-link:: ./acknowledgements.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the Acknowledgements
+
+
+
+    .. grid-item-card::  Troubleshooting
+      :margin: 0 3 0 0
+      
+      Documentation of past changes to rhythmidia.
+
+      .. button-link:: ./troubleshooting.html
+         :color: primary
+         :outline:
+         :expand:
+
+         To the troubleshooting guide
+
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
