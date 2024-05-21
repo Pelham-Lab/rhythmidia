@@ -50,6 +50,20 @@ Welcome to rhythmidia's documentation!
 
 
 
+    .. grid-item-card::  How to Cite Rhythmidia
+      :margin: 0 3 0 0
+      
+      Instructions for properly citing Rhythmidia.
+
+      .. button-link:: ./citing.html
+         :color: primary
+         :outline:
+         :expand:
+
+         Citation guide.
+
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
