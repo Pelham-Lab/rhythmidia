@@ -1,11 +1,13 @@
 Troubleshooting
 ===============
 
-
-Issue 1
+Issues and advice will appear here as they become apparent!
 ---------------
-Here's what's wrong and how to fix it!
 
-Issue 1
----------------
-Here's what's wrong and how to fix it!
+ .. Issue 1
+ .. ---------------
+ .. Here's what's wrong and how to fix it!
+
+ .. Issue 2
+ .. ---------------
+ .. Here's what's wrong and how to fix it!
