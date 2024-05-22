@@ -5,12 +5,12 @@ Getting Started
 Installation and Program Launch
 ---------------
 1. Rhythmidia must be installed in a Python environment running Python 3.11 or higher using pip. Rhythmidia runs on Unix-like operating systems including macOS and Linux. In order to install Rhythmidia, simply run the command: 
-.. code-block:: console
+.. code-block:: python
 
     pip install rhythmidia
 
 2. To run Rhythmidia run the command 
-.. code-block:: console
+.. code-block:: python
 
     rhythmidia
 
