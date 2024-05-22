@@ -10,9 +10,6 @@ Installation and Program Launch
 $ pip install rhythmidia
 
 2. To run Rhythmidia run the command
-.. code-block:: python
-    
-    pip install rhythmidia
 .. code-block:: console
     
     pip install rhythmidia
