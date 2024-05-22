@@ -26,4 +26,5 @@ Rhythmidia Right Out of the Box
     b. You are not restricted to using this directory, it is purely for your convenience.
     c. This is where analysis data will be exported by default.
 2. That’s it! You can start analyzing images immediately.
+
 NOTE: On some newer Mac laptops with variable-force-click trackpads, you may find that some clicks are not picked up effectively unless you click with full force.
