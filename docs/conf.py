@@ -23,7 +23,7 @@ import rhythmidia
 # -- Project information -----------------------------------------------------
 
 project = 'rhythmidia'
-copyright = ("2024, Alex Keeley. Project structure based on the "
+copyright = ("2024, Pelham Lab. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.1")
 author = 'Alex Keeley'
 

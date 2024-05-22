@@ -13,7 +13,7 @@ $ pip install rhythmidia
 .. code-block:: python
     
     pip install rhythmidia
-.. code-block:: python
+.. code-block:: console
     
     pip install rhythmidia
 
