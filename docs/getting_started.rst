@@ -21,13 +21,9 @@ NOTE: The terminal window used to launch Rhythmidia must remain open while the p
 
 Rhythmidia Right Out of the Box
 ---------------
-1. The first time you open a new installation of the program, you will be prompted to select a working directory. From this directory, the program will, by default, look for race tube images, and will by default, save data<br />
-    a. This can be changed later at any time<br />
-    b. You are not restricted to using this directory, it is purely for your convenience<br />
-    c. This is where analysis data will be exported by default<br />
+1. The first time you open a new installation of the program, you will be prompted to select a working directory. From this directory, the program will, by default, look for race tube images, and will by default, save data.
+    a. This can be changed later at any time
+    b. You are not restricted to using this directory, it is purely for your convenience.
+    c. This is where analysis data will be exported by default.
 2. That’s it! You can start analyzing images immediately.
 NOTE: On some newer Mac laptops with variable-force-click trackpads, you may find that some clicks are not picked up effectively unless you click with full force.
-
-.. code-block:: python
-    
-    import rhythmidia
