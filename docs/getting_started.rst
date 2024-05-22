@@ -16,7 +16,7 @@ $ rhythmidia
 
 .. code-block:: python
     
-    import rhythmidia
+    pip install rhythmidia
 
 
 NOTE: The terminal window used to launch Rhythmidia must remain open while the program is in use.
