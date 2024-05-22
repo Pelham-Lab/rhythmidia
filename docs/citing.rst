@@ -2,8 +2,8 @@ How to Cite Rhythmidia
 ===============
 
 
-You might choose to write an overview tutorial or set of tutorials.
+We hope Rhythmidia has played a significant and positive role in your research! If this is the case and you would like to cite it in an academic publication, the best way to do so it to cite the following publication:
 
-.. code-block:: python
-    
-    import rhythmidia
+Keeley, Alex T., Jeffrey M. Lotthammer, and Jacqueline F. Pelham. 2024. 
+“Rhythmidia: A Modern Tool for Circadian Period Analysis of Filamentous Fungi.” 
+bioRxiv. https://doi.org/10.1101/2024.05.15.594281.
