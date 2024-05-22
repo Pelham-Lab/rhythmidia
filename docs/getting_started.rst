@@ -12,7 +12,7 @@ Installation and Program Launch
 
 2. To run Rhythmidia run the command
 
-.. code-block:: python
+.. code-block:: console
     
     $ rhythmidia
 
