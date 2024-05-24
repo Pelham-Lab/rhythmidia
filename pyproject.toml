@@ -34,8 +34,8 @@ dependencies = [
 
 # Update the urls once the hosting is set up.
 #[project.urls]
-#"Source" = "https://github.com/Pelham-Lab/rhythmidia/"
-#"Documentation" = "https://rhythmidia.readthedocs.io/"
+"Source" = "https://github.com/Pelham-Lab/rhythmidia/"
+"Documentation" = "https://rhythmidia.readthedocs.io/"
 
 [project.optional-dependencies]
 test = [
