@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 [project]
 name = "rhythmidia"
-version = "0.0.10"
+#version = "0.0.10"
 description = "Race tube image analysis and period elucidation in Python."
 dynamic = ["version"]
 readme = "README.md"
