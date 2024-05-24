@@ -1,4 +1,5 @@
-<img src="images/icons/rhythmidiaLogoBanner.jpg" width=50% margin-left=25%></img>
+<!--<img src="images/icons/rhythmidiaLogoBanner.jpg" width=50% margin-left=25%></img>-->
+<img src="https://github.com/Pelham-Lab/rhythmidia/blob/main/images/icons/rhythmidiaLogoBanner.jpg?raw=true" width=50% margin-left=25%></img>
 
 Rhythmidia
 ---
