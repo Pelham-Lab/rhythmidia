@@ -36,6 +36,7 @@ rhythmidia
 ## Uploading and Analyzing an Image
 1. Upon opening the software, you will be greeted with the “Home” tab, which will look like this:
 ![Home Tab (blank)](images/screenshots/HomeTabBlank.png)
+![Home Tab (blank)](https://github.com/Pelham-Lab/rhythmidia/blob/main/images/screenshots/HomeTabBlank.png?raw=true)
     NOTE:If you want to add tubes to an existing experiment file, go to File -> Open experiment File (or press ⌘O), although this is not necessary
 2. To upload a new race tube image, click the button labeled “Upload Race Tube Image”<br />
 ![Upload Image Button](images/screenshots/UploadImageButton.png)
