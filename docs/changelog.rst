@@ -1,11 +1,19 @@
 Changelog
 ===============
 
-v0.0.4 (Latest)
+v0.0.8 (Latest)
 ---------------
 
-v0.0.4 (Stable)
+v0.0.8 (Stable)
 ---------------
+
+v0.0.8
+---------------
+Version 0.0.8 introduced further small documentation changes.
+
+v0.0.4
+---------------
+Version 0.0.4 introduced files for readthedocs documentation for Rhythmidia.
 
 v0.0.1
 ---------------
