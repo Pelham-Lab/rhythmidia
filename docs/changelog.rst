@@ -1,15 +1,15 @@
 Changelog
 ===============
 
-v0.0.11 (Latest)
+v0.0.13 (Latest)
 ---------------
 
-v0.0.11 (Stable)
+v0.0.13 (Stable)
 ---------------
 
-v0.0.11
+v0.0.13
 ---------------
-Version 0.0.11 introduced further small documentation changes.
+Version 0.0.13 introduced further small documentation changes.
 
 v0.0.4
 ---------------

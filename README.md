@@ -125,7 +125,7 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
-v0.0.11: Documentation update to display images in PyPI documentation.
+v0.0.13: Documentation update to display images in PyPI documentation.
 
 V0.0.4: Documentation update to create readthedocs files.
 
