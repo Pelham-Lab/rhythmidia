@@ -9,11 +9,11 @@ v0.0.13 (Stable)
 
 v0.0.13
 ---------------
-Version 0.0.13 introduced further small documentation changes.
+Versions 0.0.5 - 0.0.13 introduced further small documentation changes.
 
 v0.0.4
 ---------------
-Version 0.0.4 introduced files for readthedocs documentation for Rhythmidia.
+Versions 0.0.2 - 0.0.4 introduced files for readthedocs documentation for Rhythmidia.
 
 v0.0.1
 ---------------
