@@ -1,13 +1,13 @@
 Changelog
 ===============
 
-v0.1.0 (Latest)
+v0.1.1 (Latest)
 ---------------
 
-v0.1.0 (Stable)
+v0.1.1 (Stable)
 ---------------
 
-v0.1.0
+v0.1.1
 ---------------
 Changed calculation of growth rate to scale with dynamic time windows. Minor bugfix re: dynamic time window selection UI. Temporarily removed "Edit Packs" feature pending improvements. NOT backwards compatible with experiment files generated pre-v0.1.0.
 
