@@ -111,4 +111,4 @@ ENV/
 *.DS_store
 *rhythmidia/parameters.txt
 *devtools/.DS_store
-
+*rhythmidia/.DS_store
