@@ -52,7 +52,7 @@ meanTubeSlope = None  # Mean slope of horizontal lines separating tubes
 timeMarkLines = []  # Vertical lines where tubes are marked for time in form [x, ycenter, tube]
 bandLines = []  # Locations of conidial bands in form [x, ycenter, tube]
 densityProfiles = []  # Density profiles of tubes in b/w image format
-tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densityProfile, growthRate, tubeRange, timeMarks, bandMarks]
+tubesMaster = []  # Master list of tubes saved to file in form (per tube): [setName, imageName, imageData, tubeNumber, markHours, densityProfile, mmPerPx, tubeRange, timeMarks, bandMarks]
 canvas = None  # Plot entity
 keyPresses = [0, 0, 0, 0, 0, 0, 0, 0]  # Shift, Command/Control, S, O, P, D, H, C
 plotImageArray = None
@@ -132,7 +132,7 @@ def openExperimentFile(specifyFile=None, reopen=False):
 
 def parseTubeFromFile(tube):
     
-    parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "growthRate":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank dictionary for parsed tube containing all requisite keys
+    parsedTube = {"setName":None, "imageName":None, "imageData":None, "tubeNumber":None, "markHours":None, "densityProfile":None, "mmPerPx":None, "tubeRange":None, "timeMarks":None, "bandMarks":None}  # Blank dictionary for parsed tube containing all requisite keys
     parsedTube["setName"] = str(tube[0]) # Set name (or pack name) string is first element of line
     parsedTube["imageName"] = str(tube[1]) # Image name string is second element of line
     imageData = []  # Blank image data list; each element is a row
@@ -166,7 +166,7 @@ def parseTubeFromFile(tube):
     for num in enumerate(densityProfile):  # For each element of raw densitometry data
         densityProfile[num[0]] = float(num[1])  # Convert value to float from string
     parsedTube["densityProfile"] = densityProfile # Set race tube density profile to parsed density profile data
-    parsedTube["growthRate"] = tube[6] # Set growth rate to seventh element of line
+    parsedTube["mmPerPx"] = str(tube[6]) # Set growth rate to seventh element of line
     tubeBoundsRaw = (tube[7][1:-1].replace(" ", "").split("],["))  # Raw list of tube boundary doubles, from eighth element of line with punctuation removed, delimeted by ","
     pairs = []  # Blank list for tube boundary doubles
     for pairRaw in tubeBoundsRaw:  # For each double in raw list of tube boundary doubles
@@ -209,7 +209,6 @@ def saveExperimentFile():
     global openFile
     global workingDir
     global tubesMaster
-    print(str(openFile))
     if openFile == "":  # If no file is currently opened in Rhythmidia
         saveExperimentFileAs("")  # Prompt user to save as new file
     else:  # If a file is already open
@@ -357,6 +356,8 @@ def cancelImageAnalysis():
     horizontalLines, timeMarkLines, bandLines = [], [], []  # Zero out horizontal, time mark, and band line lists
     densityProfiles = []  # Zero out densitometry
     homeTabConsoleTextBox.value = ""  # Zero out console text box
+    experimentTabTableParamsHrsLowDropdown.clear()
+    experimentTabTableParamsHrsHighDropdown.clear()
 
     saveTubesToFileButton.disable()
     uploadRaceTubeImageButton.enable()  # Enable upload race tube image button
@@ -874,8 +875,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     """Calculate periods of a given tube's densitometry profile"""
     
 
-    timeMarks = timeMarksRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)]  # Set time marks
-    markHours = markHoursRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)]  # Set mark hours to span corresponding to time marks
+    timeMarks = timeMarksRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set time marks
+    markHours = markHoursRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set mark hours to span corresponding to time marks
     
     # Calculate 'manual' period
     growthRates = []  # List of time gaps in pixels per hour
@@ -1046,8 +1047,16 @@ def populateExperimentDataTable():
         experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[-1])
     if float(experimentTabTableParamsHrsHighDropdown.value) <= float(experimentTabTableParamsHrsLowDropdown.value):
             experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[totalMarkHours.index(float(experimentTabTableParamsHrsLowDropdown.value))+1])
+    growthMM = None
     for tube in tubesMaster:  # For each tube in master tube list
         tubePeriods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))  # Calculate periods and periodograms for current tube
+
+        if tube["tubeNumber"] == 0:
+            mmPerPx = tube["mmPerPx"]
+        if mmPerPx == "N/A":
+            growthMM = "N/A"
+        else:
+            growthMM = round(float(mmPerPx) * tubePeriods["meanGrowthPixelsPerHour"], 2)#mm per hour
         
         tableRows.append(
             [
@@ -1059,7 +1068,7 @@ def populateExperimentDataTable():
                 str(round(tubePeriods["periodLombScargle"], 3)) + " hrs",
                 str(round(tubePeriods["periodWavelet"], 3)) + " hrs",
                 str(round(tubePeriods["slopeWavelet"], 3)),
-                str(tube["growthRate"])
+                str(growthMM)
             ]
         )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
         
@@ -1116,8 +1125,17 @@ def saveExperimentData():
         experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[-1])
     if float(experimentTabTableParamsHrsHighDropdown.value) <= float(experimentTabTableParamsHrsLowDropdown.value):
             experimentTabTableParamsHrsHighDropdown.value = str(totalMarkHours[totalMarkHours.index(float(experimentTabTableParamsHrsLowDropdown.value))+1])
+    growthMM = None
     for tube in tubesMaster:  # For each tube in master tube list
         tubePeriods = calculatePeriodData(tube["densityProfile"], tube["markHours"], tube["timeMarks"], tube["bandMarks"], 14, 32, tube["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))  # Calculate periods and periodograms for current tube
+
+        if tube["tubeNumber"] == 0:
+            mmPerPx = tube["mmPerPx"]
+        if mmPerPx == "N/A":
+            growthMM = "N/A"
+        else:
+            growthMM = round(float(mmPerPx) * tubePeriods["meanGrowthPixelsPerHour"], 2)#mm per hour
+
         tableRows.append(
             [
                 "  " + str(tubesMaster.index(tube) + 1),
@@ -1128,7 +1146,7 @@ def saveExperimentData():
                 str(round(tubePeriods["periodLombScargle"], 3)),
                 str(round(tubePeriods["periodWavelet"], 3)),
                 str(round(tubePeriods["slopeWavelet"], 3)),
-                str(tube["growthRate"])
+                str(growthMM)
             ]
         )  # Add row to experiment table of [Entry number, Set number, Tube number in set, Periods]
     with open(dataFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
@@ -1348,7 +1366,7 @@ def populatePlots():
     densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(0, 301, 6)))  # Set densitometry x axis minor labels to every 3 hours
     periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData["minPeriod"], periodData["maxPeriod"] + 1)))  # Set periodogram x axis major labels to each hour in range of hours
     cwtXAxisLabels = matplotlib.ticker.FixedLocator(list(range(int(numpy.min(cwtXAxis)), int(numpy.max(cwtXAxis)), 12)))
-    tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Density\nprofile", color=appParameters["colorGraph"])  # Create first plot of densitometry
+    tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Densitometry\nprofile", color=appParameters["colorGraph"])  # Create first plot of densitometry
     tubeDoubleFigurePlots[0].margins(0)
     tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)  # Set x axis major tick labels of densitometry plot
     tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)  # Set y axis major tick labels of densitometry plot
@@ -1575,7 +1593,7 @@ def saveDensitometryData():
 
     with open(densitometryFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
         rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
-        rowWriter.writerow(["Time (hrs)", "Density Profile", "Interpolated Density Profile (No Time Marks)"])  # Write title row to file
+        rowWriter.writerow(["Time (hrs)", "Densitometry Profile", "Interpolated Densitometry Profile (No Time Marks)"])  # Write title row to file
         for index in range(len(densitometryClipped)):
             newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileSmooth[index]]
             #newLine = [densitometryXValsHours[index], densitometryClipped[index]]
@@ -1690,10 +1708,10 @@ def saveTubesToFile(setName):
         if line[2] == 0:  # If line is in current tube
             topTubeTimeMarks.append(line[0])  # Add line x to timeMarks
     topTubeTimeMarks.sort()  # Sort time marks low to high/left to right
-    if tubeLength == "":
-        mmPerPixelInImage = "N/A"
+    if tubeLength == '':
+        mmPerPx = "N/A"
     else:
-        mmPerPixelInImage = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
+        mmPerPx = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
     for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
         tubeRange = tubeBounds[tube]  # Y bounds of tube
         densityProfile = densityProfiles[tube]  # Density profile of tube
@@ -1712,10 +1730,6 @@ def saveTubesToFile(setName):
         for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
             timeGaps.append((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
         meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
-        if mmPerPixelInImage == "N/A":
-            growthRate = "N/A"
-        else:
-            growthRate = round(mmPerPixelInImage * meanGrowthPixelsPerHour, 2)#mm per hour
         tubesMaster.append(
             {
                 "setName": setName,
@@ -1724,7 +1738,7 @@ def saveTubesToFile(setName):
                 "tubeNumber": tube,
                 "markHours": markHours,
                 "densityProfile": densityProfile,
-                "growthRate": growthRate,
+                "mmPerPx": mmPerPx,
                 "tubeRange": tubeRange,
                 "timeMarks": timeMarks,
                 "bandMarks": bandMarks
@@ -1988,7 +2002,6 @@ def editDataPopupUpdate(action=None, newName=None):
     global tubesMaster
     global editDataSetList
     global openFile
-    print(str(openFile))
 
     setName = editDataSetList.value
     match action:
@@ -2237,7 +2250,7 @@ menubar = MenuBar(
             ["Close Experiment File          (⌘C)", closeExperimentFile],
             ["Save Experiment                (⌘S)", saveExperimentFile],
             ["Save Experiment As...         (\u2191⌘S)", saveExperimentFileAs],
-            ["Edit Packs", displayEditDataPopup],
+            #["Edit Packs", displayEditDataPopup],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
             ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
