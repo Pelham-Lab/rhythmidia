@@ -1713,23 +1713,23 @@ def saveTubesToFile(setName):
     else:
         mmPerPx = int(tubeLength) / (topTubeTimeMarks[-1] - topTubeTimeMarks[0])
     for tube in range(0, len(tubeBounds)):  # For each tube in tubeBounds
-        tubeRange = tubeBounds[tube]  # Y bounds of tube
-        densityProfile = densityProfiles[tube]  # Density profile of tube
+        tubeRange = [[int(i),int(j)] for i,j in tubeBounds[tube]]  # Y bounds of tube
+        densityProfile = [float(i) for i in densityProfiles[tube]]  # Density profile of tube
         timeMarks = []  # Blank list of time mark x values
         for line in timeMarkLines:  # For each line in list of time marks
             if line[2] == tube:  # If line is in current tube
-                timeMarks.append(line[0])  # Add line x to timeMarks
+                timeMarks.append(int(line[0]))  # Add line x to timeMarks
         timeMarks.sort()  # Sort time marks low to high/left to right
         bandMarks = []  # Blank list of band mark x values
         for line in bandLines:  # For each line in list of band marks
             if line[2] == tube:  # If line is in current tube
-                bandMarks.append(line[0])  # Add line x to bandMarks
+                bandMarks.append(int(line[0]))  # Add line x to bandMarks
         bandMarks.sort()  # Sort band marks low to high/left to right
-        imageString = numpy.array(finalImage.convert("L")).tolist()#numpy.array2string(numpy.array(finalImage.convert("L")), separator=",").strip().replace("\n", "")  # Convert numpy image array to string for storage to file
+        imageString = str(numpy.array(finalImage.convert("L")).tolist())#numpy.array2string(numpy.array(finalImage.convert("L")), separator=",").strip().replace("\n", "")  # Convert numpy image array to string for storage to file
         timeGaps = []  # List of time gaps in pixels per hour
         for mark in range(0, len(timeMarks) - 1):  # For each 2 consecutive time marks and corresponding hour values
-            timeGaps.append((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark]))  # Add length of gap in pixels per hour to list of time gaps
-        meanGrowthPixelsPerHour = numpy.mean(timeGaps)  # Mean time gap in pixels per hour
+            timeGaps.append(int((timeMarks[mark + 1] - timeMarks[mark])/ (markHours[mark + 1] - markHours[mark])))  # Add length of gap in pixels per hour to list of time gaps
+        meanGrowthPixelsPerHour = float(numpy.mean(timeGaps))  # Mean time gap in pixels per hour
         tubesMaster.append(
             {
                 "setName": setName,

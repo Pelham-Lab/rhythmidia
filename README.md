@@ -125,6 +125,8 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
+v0.2.0: Fixed a failure to save experiment files introduced by a change in a dependency.
+
 v0.1.1: Changed calculation of growth rate to scale with dynamic time windows. Minor bugfix re: dynamic time window selection UI. Temporarily removed "Edit Packs" feature pending improvements. NOT backwards compatible with experiment files generated pre-v0.1.1.
 
 v0.0.5 - V0.0.13: Documentation update to display images in PyPI documentation.
