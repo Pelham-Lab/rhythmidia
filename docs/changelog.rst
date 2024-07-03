@@ -1,13 +1,13 @@
 Changelog
 ===============
 
-v0.2.0 (Latest)
+v0.2.1 (Latest)
 ---------------
 
-v0.2.0 (Stable)
+v0.2.1 (Stable)
 ---------------
 
-v0.2.0
+v0.2.1
 ---------------
 Fixed a failure to save experiment files introduced by a change in a dependency.
 
