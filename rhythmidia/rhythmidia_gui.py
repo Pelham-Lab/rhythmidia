@@ -941,6 +941,20 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     frequenciesSokoloveBushell, periodogramChiSquaredSokoloveBushell = periodogram(densityProfileNoTimeMarks, scaling="spectrum", nfft=116000)  # Get Sokolove-Bushell periodogram (frequencies, power spectra in V^2)
     frequenciesSokoloveBushell = frequenciesSokoloveBushell.tolist()[1:]  # Convert S-B frequencies to list
     periodogramChiSquaredSokoloveBushell = periodogramChiSquaredSokoloveBushell.tolist()[1:]  # Convert S-B periodogram values to list
+
+    #Truncate Sokolove-Bushell periodogram/frequencies for period identification #*slope*hrsperpixel
+    truncationStartIndex = None
+    truncationEndIndex = None
+    periodsSokoloveBushell = [slopeCoeff/(i*meanGrowthPixelsPerHour) for i in frequenciesSokoloveBushell]
+    for index, period in enumerate(periodsSokoloveBushell):
+        if maxPeriod is not None:
+            if period < maxPeriod and truncationStartIndex is None:
+                truncationStartIndex = index
+        if minPeriod is not None:
+            if period < minPeriod and truncationEndIndex is None:
+                truncationEndIndex = index
+    periodogramChiSquaredSokoloveBushellTruncated = periodogramChiSquaredSokoloveBushell[truncationStartIndex-1:truncationEndIndex]
+    frequenciesSokoloveBushellTruncated = frequenciesSokoloveBushell[truncationStartIndex-1:truncationEndIndex]
     
     # Calculate Lomb-Scargle Periodogram
     frequencyInterval = int(((2 * numpy.pi) / minPeriodPixels - (2 * numpy.pi) / maxPeriodPixels) / 0.0001)  # Number of angular frequencies to test for Lomb-Scargle at an interval of 0.0001
@@ -950,7 +964,7 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
 
     # Convert frequencies to periods
     periodLombScarglePixels = (2 * numpy.pi) / frequenciesLombScargle[periodogramPowerSpectrumLombScargle.index(numpy.max(periodogramPowerSpectrumLombScargle))]  # Convert frequency of maximal spectral density from Lomb-Scargle periodogram to horizontal length in pixels
-    periodSokoloveBushellPixels = 1 / frequenciesSokoloveBushell[periodogramChiSquaredSokoloveBushell.index(numpy.max(periodogramChiSquaredSokoloveBushell))]  # Convert frequency of maximal spectral density from Sokolove-Bushell periodogram to horizontal length in pixels
+    periodSokoloveBushellPixels = 1 / frequenciesSokoloveBushellTruncated[periodogramChiSquaredSokoloveBushellTruncated.index(numpy.max(periodogramChiSquaredSokoloveBushellTruncated))]  # Convert frequency of maximal spectral density from Sokolove-Bushell periodogram to horizontal length in pixels
     periodLombScargle = periodLombScarglePixels * meanGrowthHoursPerPixel * slopeCoeff
     periodSokoloveBushell = periodSokoloveBushellPixels * meanGrowthHoursPerPixel * slopeCoeff
 
