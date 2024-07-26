@@ -125,7 +125,9 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
-v0.2.1: Fixed a failure to save experiment files introduced by a change in a dependency.
+v0.2.4: Constrained calculation of Sokolove-Bushell period to a reasonable range.
+
+v0.2.1: Fixed a failure to save experiment files introduced by a change in a dependency. NOT backwards compatible with experiment files generated pre-v0.2.1.
 
 v0.1.1: Changed calculation of growth rate to scale with dynamic time windows. Minor bugfix re: dynamic time window selection UI. Temporarily removed "Edit Packs" feature pending improvements. NOT backwards compatible with experiment files generated pre-v0.1.1.
 

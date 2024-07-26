@@ -1,11 +1,15 @@
 Changelog
 ===============
 
-v0.2.1 (Latest)
+v0.2.4 (Latest)
 ---------------
 
-v0.2.1 (Stable)
+v0.2.4 (Stable)
 ---------------
+
+v0.2.4
+---------------
+Constrained calculation of Sokolove-Bushell period to a reasonable range. NOT backwards compatible with experiment files generated pre-v0.1.1.
 
 v0.2.1
 ---------------
