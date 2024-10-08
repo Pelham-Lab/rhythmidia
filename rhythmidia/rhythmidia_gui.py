@@ -848,6 +848,7 @@ def getTimeMarkTableData():
 
     numberOfHours = 0  # Set number of hours in row to 0
     for datum in timeMarkTableDataTextBoxes:  # For each row of time mark table
+        print(datum.value)
         match (timeMarkTableDataTextBoxes.index(datum) % 3):  # Based on index of text box in list of time mark data table cells
             case 0:  # If in first column
                 numberOfHours = 24 * (int(datum.value))  # Set hours to number of days in row * 24
@@ -877,6 +878,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
 
     timeMarks = timeMarksRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set time marks
     markHours = markHoursRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set mark hours to span corresponding to time marks
+    print("markhours")
+    print(markHours)
     
     # Calculate 'manual' period
     growthRates = []  # List of time gaps in pixels per hour
@@ -987,6 +990,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
             periodPeakYVals.append(continuousWaveletTransformPeriodsYAxis[periodsColumn.index(numpy.max(periodsColumn))])
     continuousWaveletTransformPeaksSlope = numpy.polynomial.polynomial.polyfit(periodPeakXVals, periodPeakYVals, 1)[1]
     continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals)
+
+    print(str([densitometryXValsHours[-1], densitometryXValsHoursWindow[-1]]))
 
     return ({
         "periodLinearRegression": periodLinearRegression,
