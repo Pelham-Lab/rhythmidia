@@ -65,7 +65,7 @@ def setWorkingDirectory():
     global workingDir
     global app
     
-    workingDir = app.select_folder(title="Please select working directory:", folder="/")  # Set working directory variable to user-specified directory via file selection popup
+    workingDir = app.select_folder(title="Please select working directory:", folder=workingDir)  # Set working directory variable to user-specified directory via file selection popup
     
     if not workingDir:
         sys.exit()
@@ -1663,6 +1663,204 @@ def saveDensitometryData():
             rowWriter.writerow(newLine)  # Write row to file
 
 
+def saveAllDensitometryData():
+    """Save all densitometry data."""
+
+    global workingDir
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabTableParamsHrsLowDropdown
+    global experimentTabTableParamsHrsHighDropdown
+    global tubesMaster
+
+
+    dataSaveDir = app.select_folder(
+        title="Plots save directory",
+        folder=workingDir
+    )
+    
+    packOptions = experimentTabPlotTubeSelectionSetList.items
+    for pack in packOptions:
+        experimentTabPlotTubeSelectionSetList.value = pack
+        populatePlotTubeSelectionLists()
+        tubeOptions = experimentTabPlotTubeSelectionTubeList.items
+        for tube in tubeOptions:
+            experimentTabPlotTubeSelectionTubeList.value = tube
+            # Special automatic version of saveDensitometryData()
+            setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list 
+            tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
+            densitometryFileName = os.path.join(dataSaveDir, setName + "_tube" + str(tubeNumber) + "_densitometry_data.csv")
+            densityProfile = []  # Blank list for density profile
+            timeMarks = []  # Blank list for time marks
+            bandMarks = []  # Blank list for bank marks
+            markHours = []  # Blank list for mark hours
+            tubeRange = []
+            for tube in tubesMaster:  # For each tube in global master tubes list
+                if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber-1:  # If tube matches selected tube
+                    densityProfile = tube["densityProfile"]  # Set density profile to current tube's density profile
+                    timeMarks = tube["timeMarks"]
+                    markHours = tube["markHours"]
+                    bandMarks = tube["bandMarks"]
+                    tubeRange = tube["tubeRange"]
+            periodData = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
+            meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
+
+            timeMarksAdjusted = [i - timeMarks[0] for i in timeMarks]
+
+            densitometryXValsHours = periodData["densitometryXHours"]
+            densitometryClipped = periodData["densityProfile"]
+            densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
+            densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
+
+            with open(densitometryFileName, 'w', newline='', encoding='utf-16') as csvfile:  # Open csv file
+                rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+                rowWriter.writerow(["Time (hrs)", "Densitometry Profile", "Interpolated Densitometry Profile (No Time Marks, Smoothed)", "Features"])  # Write title row to file
+                for index in range(len(densitometryClipped)):
+                    features = []
+                    if index in timeMarksAdjusted:
+                        features.append("Time Mark")
+                    if index in bandMarks:
+                        features.append("Band Mark")
+                    features_string = "/".join(features)
+                    newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileSmooth[index], features_string]
+                    rowWriter.writerow(newLine)  # Write row to file
+
+
+def saveAllDensitometryDataForEcho():
+    """Save all densitometry data, formatted for ECHO."""
+
+    global workingDir
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabTableParamsHrsLowDropdown
+    global experimentTabTableParamsHrsHighDropdown
+    global tubesMaster
+
+
+    dataSaveDir = app.select_folder(
+        title="Plots save directory",
+        folder=workingDir
+    )
+    
+    packOptions = experimentTabPlotTubeSelectionSetList.items
+    for pack in packOptions:
+        experimentTabPlotTubeSelectionSetList.value = pack
+        populatePlotTubeSelectionLists()
+        tubeOptions = experimentTabPlotTubeSelectionTubeList.items
+        for tube in tubeOptions:
+            experimentTabPlotTubeSelectionTubeList.value = tube
+            # Special automatic version of saveDensitometryData()
+            setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list 
+            tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
+            densitometryFileName = os.path.join(dataSaveDir, setName + "_tube" + str(tubeNumber) + "_densitometry_data_for_echo.csv")
+            densityProfile = []  # Blank list for density profile
+            timeMarks = []  # Blank list for time marks
+            bandMarks = []  # Blank list for bank marks
+            markHours = []  # Blank list for mark hours
+            tubeRange = []
+            for tube in tubesMaster:  # For each tube in global master tubes list
+                if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber-1:  # If tube matches selected tube
+                    densityProfile = tube["densityProfile"]  # Set density profile to current tube's density profile
+                    timeMarks = tube["timeMarks"]
+                    markHours = tube["markHours"]
+                    bandMarks = tube["bandMarks"]
+                    tubeRange = tube["tubeRange"]
+            periodData = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
+            meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
+
+            timeMarksAdjusted = [i - timeMarks[0] for i in timeMarks]
+
+            densitometryXValsHours = periodData["densitometryXHours"]
+            densitometryClipped = periodData["densityProfile"]
+            densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
+            densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
+
+            with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file
+                rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+                header_row = ["TP" + str(i) for i in list(range(1, len(densityProfileNoTimeMarks)+1))]
+                header_row.insert(0, "Tube")
+                rowWriter.writerow(header_row)
+                data_row = copy.deepcopy(densityProfileNoTimeMarks)
+                data_row.insert(0, setName + "_" + str(tubeNumber) + "_" + str(round(meanGrowthHoursPerPixel, 2)) + "hrsPerPixel")
+                rowWriter.writerow(data_row)
+
+
+def saveAggregateDensitometryData():
+    """Save all densitometry data."""
+
+    global workingDir
+    global experimentTabPlotTubeSelectionSetList
+    global experimentTabPlotTubeSelectionTubeList
+    global experimentTabTableParamsHrsLowDropdown
+    global experimentTabTableParamsHrsHighDropdown
+    global tubesMaster
+
+
+    densitometryFileName = app.select_file(
+        title="Save densitometries as...",
+        folder=workingDir,
+        filetypes=[["CSV", "*.csv"]],
+        save=True,
+        filename=("aggregate_densitometry_data"),
+    )  # Get file name and file save location from user input from app popup
+
+    data = {}
+    data_noTimeMarks = {}
+    ratios = {}
+    time_len = 0
+    
+    packOptions = experimentTabPlotTubeSelectionSetList.items
+    for pack in packOptions:
+        experimentTabPlotTubeSelectionSetList.value = pack
+        populatePlotTubeSelectionLists()
+        tubeOptions = experimentTabPlotTubeSelectionTubeList.items
+        for tube in tubeOptions:
+            experimentTabPlotTubeSelectionTubeList.value = tube
+            setName = experimentTabPlotTubeSelectionSetList.value  # Get set name from selection in set list 
+            tubeNumber = int(experimentTabPlotTubeSelectionTubeList.value[experimentTabPlotTubeSelectionTubeList.value.rindex("|")+2:])  # Get tube number from selected tube name in tube list
+            id = setName + "_tube_" + str(tubeNumber)
+            #data[id] = []
+            #data_noTimeMarks[id] = []
+            #time[id] = []
+            
+            densityProfile = []  # Blank list for density profile
+            timeMarks = []  # Blank list for time marks
+            bandMarks = []  # Blank list for bank marks
+            markHours = []  # Blank list for mark hours
+            tubeRange = []
+            for tube in tubesMaster:  # For each tube in global master tubes list
+                if tube["setName"] == setName and tube["tubeNumber"] == tubeNumber-1:  # If tube matches selected tube
+                    densityProfile = tube["densityProfile"]  # Set density profile to current tube's density profile
+                    timeMarks = tube["timeMarks"]
+                    markHours = tube["markHours"]
+                    bandMarks = tube["bandMarks"]
+                    tubeRange = tube["tubeRange"]
+            periodData = calculatePeriodData(densityProfile, markHours, timeMarks, bandMarks, 14, 32, tubeRange, float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))
+            meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
+            timeMarksAdjusted = [i - timeMarks[0] for i in timeMarks]
+            densitometryXValsHours = periodData["densitometryXHours"]
+            print(numpy.mean(numpy.diff(densitometryXValsHours)))
+            densitometryClipped = periodData["densityProfile"]
+            densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
+            densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
+
+            data_noTimeMarks[id] = densityProfileNoTimeMarks
+            ratios[id] = meanGrowthHoursPerPixel
+            if len(densityProfileNoTimeMarks) > time_len:
+                time_len = len(densityProfileNoTimeMarks)
+    with open(densitometryFileName, 'w', newline='') as csvfile:  # Open csv file , encoding='utf-16'
+        rowWriter = csv.writer(csvfile, delimiter=',')  # Write to file delimited by ","
+        header_row = ["TP" + str(i) for i in list(range(1, time_len+1))]
+        header_row.insert(0, "Pack")
+        rowWriter.writerow(header_row)
+        for key in data_noTimeMarks:
+            if "328-4" in key:
+                row = [round(float(i),3) for i in data_noTimeMarks[key]]
+                row.insert(0, key + "_" + str(round(ratios[key], 2)) + "hrsPerPixel")
+                rowWriter.writerow(row)
+
+
+
 def savePeriodogramData():
     """Save periodogram data as csv."""
     
@@ -2306,7 +2504,7 @@ app.when_key_released = keyRelease
 # Set up OS menu bar
 menubar = MenuBar(
     app,
-    toplevel=["File", "Help"],
+    toplevel=["File", "Data", "Help"],
     options=[
         [
             ["Open Experiment                (⌘O)", openExperimentFile],
@@ -2315,10 +2513,17 @@ menubar = MenuBar(
             ["Save Experiment As...         (\u2191⌘S)", saveExperimentFileAs],
             #["Edit Packs", displayEditDataPopup],
             ["Set Working Directory          (⌘D)", setWorkingDirectory],
-            ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt],
-            ["Save All Plots (Experimental Feature)", saveAllPlots]
+            ["Graphics Preferences           (⌘P)", graphicsPreferencesPrompt]
         ],
-        [["Documentation", helpMain]],
+        [
+            ["Save All Plots (Experimental Feature)", saveAllPlots],
+            ["Save All Densitometry Data (Experimental Feature)", saveAllDensitometryData],
+            #["Save Aggregate Densitometry Data (Experimental Feature)", saveAggregateDensitometryData]
+            ["Save All Densitometry Data for ECHO (Experimental)", saveAllDensitometryDataForEcho]
+        ],
+        [
+            ["Documentation", helpMain]
+        ],
     ]
 )  # Set up os menu bar for application
 
