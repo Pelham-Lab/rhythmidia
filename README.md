@@ -49,6 +49,9 @@ rhythmidia
     ![Image Adjustment Buttons](https://github.com/Pelham-Lab/rhythmidia/blob/main/images/screenshots/ImageChangeButtons.png?raw=true)
 3. Rotate your image so that the growth direction of the tubes is from left to right across your screen<br />
     a. To rotate your image 90 degrees clockwise, click the button labeled “Rotate”<br />
+4. If necessary, update the Time Sheet table to correspond to the times at which you marked your race tubes, located to the left of the image box
+    a. Time Sheet entries are in days:hours:minutes, starting at 0:00:00 at the first time mark
+    b. Entries past the greatest number of identified time marks in a single tube will be ignored, so there is no need to address them
 4. When you are satisfied with your image’s orientation, click the button labeled “Lock & Analyze Image”
 5. Rhythmidia will try to identify horizontal lines corresponding to the horizontal boundaries of the tubes in your image, including the lower and upper bounds below and above the final and first tubes
     a. One line between each two tubes
@@ -125,6 +128,10 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
+v0.3.1: Added further experimental features for bulk data handling. Minor updates to documentation.
+
+v0.3.0: Made minor changes to allow for analysis of 'free-run' experiments. Minor bugfixes. Added functionality to remove band markers from plots. Added experimental functionality to save all plots from an experiment file at once.
+
 v0.2.4: Constrained calculation of Sokolove-Bushell period to a reasonable range.
 
 v0.2.1: Fixed a failure to save experiment files introduced by a change in a dependency. NOT backwards compatible with experiment files generated pre-v0.2.1.

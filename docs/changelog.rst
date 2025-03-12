@@ -1,15 +1,23 @@
 Changelog
 ===============
 
-v0.2.4 (Latest)
+v0.3.1 (Latest)
 ---------------
 
-v0.2.4 (Stable)
+v0.3.1 (Stable)
 ---------------
+
+v0.3.1
+---------------
+Added further experimental features for bulk data handling. Minor updates to documentation.
+
+v0.3.0
+---------------
+Made minor changes to allow for analysis of 'free-run' experiments. Minor bugfixes. Added functionality to remove band markers from plots. Added experimental functionality to save all plots from an experiment file at once.
 
 v0.2.4
 ---------------
-Constrained calculation of Sokolove-Bushell period to a reasonable range. NOT backwards compatible with experiment files generated pre-v0.1.1.
+Constrained calculation of Sokolove-Bushell period to a reasonable range. NOT backwards compatible with experiment files generated pre-v0.2.1.
 
 v0.2.1
 ---------------
