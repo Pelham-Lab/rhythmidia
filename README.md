@@ -128,7 +128,7 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
-v0.4.0: Corrected major bugs in implementation of time-windowed analysis. Corrected minor bugs in graphics options.
+v0.4.1: Corrected major bugs in implementation of time-windowed analysis. Corrected minor bugs in graphics options.
 
 v0.3.1: Added further experimental features for bulk data handling. Minor updates to documentation.
 
