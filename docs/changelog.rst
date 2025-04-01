@@ -1,11 +1,15 @@
 Changelog
 ===============
 
-v0.3.1 (Latest)
+v0.4.0 (Latest)
 ---------------
 
-v0.3.1 (Stable)
+v0.4.0 (Stable)
 ---------------
+
+v0.4.0
+---------------
+Corrected major bugs in implementation of time-windowed analysis. Corrected minor bugs in graphics options.
 
 v0.3.1
 ---------------

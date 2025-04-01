@@ -128,6 +128,8 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
+v0.4.0: Corrected major bugs in implementation of time-windowed analysis. Corrected minor bugs in graphics options.
+
 v0.3.1: Added further experimental features for bulk data handling. Minor updates to documentation.
 
 v0.3.0: Made minor changes to allow for analysis of 'free-run' experiments. Minor bugfixes. Added functionality to remove band markers from plots. Added experimental functionality to save all plots from an experiment file at once.
