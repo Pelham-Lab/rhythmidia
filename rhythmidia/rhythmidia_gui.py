@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker
+import matplotlib.colors as mcolors
 import numpy
 import csv
 import os
@@ -34,7 +35,7 @@ csv.field_size_limit(999999999)
 
 
 #Assign global variable initial values
-appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue", "heatmap":""}  # Dictionary of settings
+appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue", "heatmap":"viridis"}  # Dictionary of settings
 openFile = ""  # Name of open experiment file
 workingDir = ""  # Name of working directory
 imageName = ""  # Name of opened image
@@ -874,7 +875,6 @@ def saveTubesToFilePrompt():
 def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarksRaw, minPeriod, maxPeriod, tubeRangeRaw, calculationWindowStart, calculationWindowEnd):
     """Calculate periods of a given tube's densitometry profile"""
     
-
     timeMarks = timeMarksRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set time marks
     markHours = markHoursRaw[markHoursRaw.index(calculationWindowStart):markHoursRaw.index(calculationWindowEnd)+1]  # Set mark hours to span corresponding to time marks
     
@@ -888,16 +888,15 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     densitometryXValsHours = []  # Blank list for densitometry x axis with values in hours
     for xPixel in densitometryXValsRaw:  # For each x pixel in densitometry x axis
         densitometryXValsHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))  # Append pixel x value converted to hours
-    hoursStartCalculationWindowIndex = None  # Index of start of time window in densitometry x axis with values in hours
-    hoursEndCalculationWindowIndex = None  # Index of end of time window in densitometry x axis with values in hours
-    for index, hours in enumerate(densitometryXValsHours):  # For each index in densitometry x axis with values in hours
-        if hoursStartCalculationWindowIndex is None and calculationWindowStart <= hours:  # If we've just passed the start of the time window
-            hoursStartCalculationWindowIndex = index  # Set the index of the start of the time window to this index
-        if hoursEndCalculationWindowIndex is None and calculationWindowEnd <= hours:  # If we've just passed the end of the time window
-            hoursEndCalculationWindowIndex = index + 1  # Set the index of the end of the time window to this index
-    if hoursEndCalculationWindowIndex is None:  # If we never set an index for the end of the time window
-        hoursEndCalculationWindowIndex = len(densitometryXValsHours)-1  # Set the index of the end of the time window to the last index possible
-
+    if calculationWindowStart < markHours[0]:
+        hoursStartCalculationWindowIndex = timeMarks[0]
+    else:
+        hoursStartCalculationWindowIndex = timeMarks[markHours.index(calculationWindowStart)]  # Index of start of time window in densitometry x axis with values in hours
+    if calculationWindowEnd > markHours[len(timeMarks)-1]:
+        hoursEndCalculationWindowIndex = timeMarks[-1]
+    else:
+        hoursEndCalculationWindowIndex = timeMarks[markHours.index(calculationWindowEnd)]  # Index of end of time window in densitometry x axis with values in hours
+    
     if hoursEndCalculationWindowIndex > timeMarks[-1]:  # THIS SHOULD STOP CALCULATION AT THE FINAL TM in the event that user tries to analyze further than the end of one pack's data, instead of going to the non-marked end of the dataset/densitometry
         hoursEndCalculationWindowIndex = timeMarks[-1]
 
@@ -908,12 +907,12 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     densityProfile = densityProfileRaw[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set time window to portion of densitometry x axis between start and end of time window indices
     tubeRange = tubeRangeRaw[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]  # Set corresponding window of tube range
     densitometryXValsHoursWindow = densitometryXValsHours[hoursStartCalculationWindowIndex:hoursEndCalculationWindowIndex]
-    markHours = []  # Blank list for portion of mark hours corresponding to time window
+    #markHours = []  # Blank list for portion of mark hours corresponding to time window
     bandMarks = []  # Blank list for portion of band marks correspoding to time window
     for value in bandMarksRaw:  # For each band mark x position in current tube
         if value >= hoursStartCalculationWindowIndex and value <= hoursEndCalculationWindowIndex:  # If band mark is within time window
             bandMarks.append(value-hoursStartCalculationWindowIndex)  # Add band mark x position, normalized so first is at 0, to list of band marks in time window
-    slopeCoeff = abs(1 / numpy.cos(numpy.arctan(((tubeRange[-1][1] + tubeRange[-1][0]) / 2- (tubeRange[0][1] + tubeRange[0][0]) / 2) / len(tubeRange))))  # Calculate coefficient to correct for slope
+    slopeCoeff = abs(1 / numpy.cos(numpy.arctan(((tubeRange[-1][1] + tubeRange[-1][0]) / 2 - (tubeRange[0][1] + tubeRange[0][0]) / 2) / len(tubeRange))))  # Calculate coefficient to correct for slope
     bandGaps = []  # List of band gaps in pixels
     for mark in range(0, len(bandMarks) - 1):  # For each 2 consecutive band marks
         bandGaps.append((bandMarks[mark + 1] - bandMarks[mark]))  # Add length of gap in pixels to list of band marks
@@ -984,13 +983,16 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     continuousWaveletTransformPeriodsYAxis = numpy.linspace(numpy.min(continuousWaveletTransformPeriods), numpy.max(continuousWaveletTransformPeriods), len(continuousWaveletTransformPeriods))
     periodPeakXVals = []
     periodPeakYVals = []
+    #plt.imshow(numpy.flipud(continuousWaveletTransformAmplitudes))
     for xVal in list(range(len(densitometryXValsHoursWindow))):
         periodsColumn = list(numpy.flipud(continuousWaveletTransformAmplitudes)[:, xVal])
         if numpy.max(periodsColumn) > numpy.max(continuousWaveletTransformAmplitudes) * 0.7:
+            #plt.scatter(xVal, periodsColumn.index(numpy.max(periodsColumn)), color='red')
             periodPeakXVals.append(densitometryXValsHoursWindow[xVal])
             periodPeakYVals.append(continuousWaveletTransformPeriodsYAxis[periodsColumn.index(numpy.max(periodsColumn))])
     continuousWaveletTransformPeaksSlope = numpy.polynomial.polynomial.polyfit(periodPeakXVals, periodPeakYVals, 1)[1]
     continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals)
+    #plt.show()
 
     return ({
         "periodLinearRegression": periodLinearRegression,
@@ -1013,7 +1015,8 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
         "densityProfile": densityProfile,
         "timeMarks": timeMarks,
         "bandMarks": bandMarks,
-        "densityNoTimeMarks": densityProfileNoTimeMarks
+        "densityNoTimeMarks": densityProfileNoTimeMarks,
+        "markHours" : markHours
     })
 
 
@@ -1333,15 +1336,16 @@ def populatePlots():
     periodData = calculatePeriodData(tubeToPlot["densityProfile"], tubeToPlot["markHours"], tubeToPlot["timeMarks"], tubeToPlot["bandMarks"], 14, 32, tubeToPlot["tubeRange"], float(experimentTabTableParamsHrsLowDropdown.value), float(experimentTabTableParamsHrsHighDropdown.value))  # Calculate period data for time window
     timeMarks = periodData["timeMarks"]
     bandMarks = periodData["bandMarks"]
+    markHours = periodData["markHours"]
     meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
-    densitometryXValsHours = periodData["densitometryXHours"]
+    densitometryXValsHours = [i + markHours[0] for i in periodData["densitometryXHours"]]
 
     timeMarksHours = []  # Blank list for corresponding times of time marks
     for xPixel in timeMarks:  # For x position of each time mark
-        timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel, 2))  # Add normalized time mark x position converted to hours, rounded
+        timeMarksHours.append(round((xPixel - timeMarks[0]) * meanGrowthHoursPerPixel + markHours[0], 2))  # Add normalized time mark x position converted to hours, rounded
     bandMarksHours = []  # Blank list for corresponding times of band marks
     for xPixel in bandMarks:  # For x position of each band mark
-        bandMarksHours.append(round((xPixel) * meanGrowthHoursPerPixel, 2))  # Add normalized band mark x position converted to hours, rounded
+        bandMarksHours.append(round((xPixel) * meanGrowthHoursPerPixel + markHours[0], 2))  # Add normalized band mark x position converted to hours, rounded
     densitometryYVals = periodData["densityProfile"]  # Set y values of densitometry to portion of densitometry within time window
     # Create periodogram plot data
     slopeCoeff = periodData["slopeCoeff"]  # Set slope coefficient
@@ -1352,7 +1356,7 @@ def populatePlots():
     periodogramYVals = []  # Blank list for y values of periodogram
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         cwtYAxis = periodData[method[2]]
-        cwtXAxis = periodData["densitometryXHours"]
+        cwtXAxis = densitometryXValsHours#periodData["densitometryXHours"]
         cwtZAxis = periodData[method[0]]
     else:
         calculatedPeriodogramFrequencies = periodData[method[1]]  # Set list calculated periodogram frequencies
@@ -1384,12 +1388,13 @@ def populatePlots():
     densitometryYAxisLabels = matplotlib.ticker.FixedLocator([0, 60, 120, 180, 240, 255])  # Set densitometry y axis major labels
     densitometryXAxisMinorLabels = matplotlib.ticker.FixedLocator(list(range(0, 301, 6)))  # Set densitometry x axis minor labels to every 3 hours
     periodogramXAxisLabels = matplotlib.ticker.FixedLocator(list(range(periodData["minPeriod"], periodData["maxPeriod"] + 1)))  # Set periodogram x axis major labels to each hour in range of hours
-    cwtXAxisLabels = matplotlib.ticker.FixedLocator(list(range(int(numpy.min(cwtXAxis)), int(numpy.max(cwtXAxis)), 12)))
+    cwtXAxisLabels = copy.deepcopy(densitometryXAxisLabels)
     tubeDoubleFigurePlots[0].plot(densitometryXValsHours, densitometryYVals, label="Densitometry\nprofile", color=appParameters["colorGraph"])  # Create first plot of densitometry
     tubeDoubleFigurePlots[0].margins(0)
     tubeDoubleFigurePlots[0].xaxis.set_major_locator(densitometryXAxisLabels)  # Set x axis major tick labels of densitometry plot
     tubeDoubleFigurePlots[0].yaxis.set_major_locator(densitometryYAxisLabels)  # Set y axis major tick labels of densitometry plot
     tubeDoubleFigurePlots[0].xaxis.set_minor_locator(densitometryXAxisMinorLabels)  # Set x axis minor tick labels of densitometry plot
+    tubeDoubleFigurePlots[0].set_xlim(markHours[0], markHours[-1])
     tubeDoubleFigurePlots[0].set(
         xlabel="Time (hrs)", 
         ylabel="Density", 
@@ -1423,6 +1428,8 @@ def populatePlots():
         tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap=appParameters["heatmap"]), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         tubeDoubleFigurePlots[1].xaxis.set_major_locator(cwtXAxisLabels)
+        tubeDoubleFigurePlots[1].set_ylim(15, 35)
+        tubeDoubleFigurePlots[1].set_xlim(markHours[0], markHours[-1])
         tubeDoubleFigurePlots[1].set(
             xlabel="Time (hrs)",
             title="Continuous Wavelet Transform",
@@ -1839,7 +1846,6 @@ def saveAggregateDensitometryData():
             meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
             timeMarksAdjusted = [i - timeMarks[0] for i in timeMarks]
             densitometryXValsHours = periodData["densitometryXHours"]
-            print(numpy.mean(numpy.diff(densitometryXValsHours)))
             densitometryClipped = periodData["densityProfile"]
             densityProfileNoTimeMarks = periodData["densityNoTimeMarks"]
             densityProfileSmooth = savgol_filter(densityProfileNoTimeMarks, window_length=30, polyorder=4, mode="interp")  # Create list for Savitzky-Golay smoothed density profile of marks-corrected dataset #RIGHTHERE
@@ -2145,11 +2151,18 @@ def helpMain():
         "https://github.com/Pelham-Lab/rhythmidia", new=0, autoraise=True
     )
 
+def color_name_to_hex(color_name):
+    try:
+        return mcolors.CSS4_COLORS[color_name.lower()]
+    except KeyError:
+        return ''
 
 def invertColor(hex):
     """Invert color given as hex code and return hex code of inverted color."""
 
-    
+    color_to_hex = color_name_to_hex(hex)
+    if color_name_to_hex is not '':
+        hex = color_to_hex
     hex = hex.lstrip('#')
     rgb =  tuple(255 - int(hex[i:i + len(hex) // 3], 16) for i in range(0, len(hex), len(hex)//3))
     out = '#%02x%02x%02x' % rgb
@@ -2183,7 +2196,7 @@ def graphicsPreferencesPrompt():
     changeBandLineColorButton.font = "Arial bold"
     changeBandLineColorTextBox = TextBox(graphicsPreferencesWindow, grid=[2,3], text=appParameters["colorBand"], width=7)
     changeHeatmapGradientLabel = Text(graphicsPreferencesWindow, grid=[0,4], text="Heatmap Gradient:", size=13, font="Arial bold", color="white")
-    changeHeatmapGradientDropdown = Combo(graphicsPreferencesWindow, grid=[2,4], options=["Viridis", "Plasma", "Inferno", "Magma", "Cividis"], selected=appParameters["heatmap"], command=colorPickHandler)
+    changeHeatmapGradientDropdown = Combo(graphicsPreferencesWindow, grid=[2,4], options=["Viridis", "Plasma", "Inferno", "Magma", "Cividis"], selected=appParameters["heatmap"].capitalize(), command=colorPickHandler)
     changeHeatmapGradientDropdown.select_default()
 
     changeGraphColorTextBox.text_color = appParameters["colorGraph"]
