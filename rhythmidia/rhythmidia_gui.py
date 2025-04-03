@@ -13,6 +13,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker
 import matplotlib.colors as mcolors
+from mpl_toolkits.mplot3d import Axes3D
 import numpy
 import csv
 import os
@@ -35,7 +36,7 @@ csv.field_size_limit(999999999)
 
 
 #Assign global variable initial values
-appParameters = {"workingDir":"", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue", "heatmap":"viridis"}  # Dictionary of settings
+appParameters = {"workingDir":"~", "colorGraph":"black", "colorHoriz":"orange", "colorVert":"red", "colorBand":"blue", "heatmap":"viridis"}  # Dictionary of settings
 openFile = ""  # Name of open experiment file
 workingDir = ""  # Name of working directory
 imageName = ""  # Name of opened image
@@ -986,12 +987,16 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
     #plt.imshow(numpy.flipud(continuousWaveletTransformAmplitudes))
     for xVal in list(range(len(densitometryXValsHoursWindow))):
         periodsColumn = list(numpy.flipud(continuousWaveletTransformAmplitudes)[:, xVal])
-        if numpy.max(periodsColumn) > numpy.max(continuousWaveletTransformAmplitudes) * 0.7:
+        if numpy.max(periodsColumn) > numpy.max(continuousWaveletTransformAmplitudes) * 0.5:
             #plt.scatter(xVal, periodsColumn.index(numpy.max(periodsColumn)), color='red')
             periodPeakXVals.append(densitometryXValsHoursWindow[xVal])
             periodPeakYVals.append(continuousWaveletTransformPeriodsYAxis[periodsColumn.index(numpy.max(periodsColumn))])
-    continuousWaveletTransformPeaksSlope = numpy.polynomial.polynomial.polyfit(periodPeakXVals, periodPeakYVals, 1)[1]
-    continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals)
+    #periodPeakXVals_sorted, periodPeakYVals_sorted = zip(*sorted(zip(periodPeakXVals, periodPeakYVals), key=lambda pair: pair[1]))
+    #periodPeakXVals_90 = periodPeakXVals_sorted[int(len(periodPeakXVals) * 0.025):int(len(periodPeakXVals) * 0.975)]
+    #periodPeakYVals_90 = periodPeakYVals_sorted[int(len(periodPeakXVals) * 0.025):int(len(periodPeakXVals) * 0.975)]
+    periodPeakXVals_, periodPeakYVals_ = remove_outliers_xy(periodPeakXVals, periodPeakYVals, 0.5)
+    continuousWaveletTransformPeaksSlope = numpy.polynomial.polynomial.polyfit(periodPeakXVals_, periodPeakYVals_, 1)[1]
+    continuousWaveletTransformMeanPeriod = numpy.mean(periodPeakYVals_)
     #plt.show()
 
     return ({
@@ -1016,8 +1021,17 @@ def calculatePeriodData(densityProfileRaw, markHoursRaw, timeMarksRaw, bandMarks
         "timeMarks": timeMarks,
         "bandMarks": bandMarks,
         "densityNoTimeMarks": densityProfileNoTimeMarks,
-        "markHours" : markHours
+        "markHours" : markHours,
+        "periodPeakXVals" : periodPeakXVals_,
+        "periodPeakYVals" : periodPeakYVals_
     })
+
+def remove_outliers_xy(x, y, num_std=2):
+    mean_y = numpy.mean(y)
+    std_dev_y = numpy.std(y)
+    filtered_x, filtered_y = zip(*[(x_val, y_val) for x_val, y_val in zip(x, y) 
+                                   if (mean_y - num_std * std_dev_y) <= y_val <= (mean_y + num_std * std_dev_y)])
+    return list(filtered_x), list(filtered_y)
 
 
 def populateExperimentDataTable():
@@ -1268,7 +1282,7 @@ def performStatisticalAnalysis():
     meanSlope = ""
     if isWavelet:
         meanSlope = "Slope:\n" + str(round(numpy.mean(selectedSlopes), 3)) + " hrs/hr\n\n"
-    standardDeviation = numpy.std(selectedPeriods)  # Calculate standard deviation of selected periods
+    standardDeviation = numpy.std(selectedPeriods, ddof=1)  # Calculate standard deviation of selected periods
     standardErrorOfMeans = standardDeviation / numpy.sqrt(len(selectedPeriods))  # Calculate standard error of selected periods
     experimentTabStatisticalAnalysisOutputTextBox.value = (
         "n (# tubes) = "
@@ -1339,6 +1353,8 @@ def populatePlots():
     markHours = periodData["markHours"]
     meanGrowthHoursPerPixel = 1/periodData["meanGrowthPixelsPerHour"]
     densitometryXValsHours = [i + markHours[0] for i in periodData["densitometryXHours"]]
+    periodPeakXVals = periodData["periodPeakXVals"]
+    periodPeakYVals = periodData["periodPeakYVals"]
 
     timeMarksHours = []  # Blank list for corresponding times of time marks
     for xPixel in timeMarks:  # For x position of each time mark
@@ -1426,6 +1442,20 @@ def populatePlots():
     else:  # If using wavelet method
         tubeDoubleFigurePlots[1].imshow(cwtZAxis, cmap=appParameters["heatmap"], extent=(cwtXAxis[0], cwtXAxis[-1], cwtYAxis[0], cwtYAxis[-1]), aspect="auto")#, aspect=ax0aspect
         tubeDoubleFigure.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(numpy.min(cwtZAxis), numpy.max(cwtZAxis)), cmap=appParameters["heatmap"]), ax=tubeDoubleFigurePlots[2], fraction=0.5, shrink=0.8, aspect=5, pad=0, location="left", anchor=(0, 1)).set_label("Amplitude", size=8, labelpad=-50)
+        #tubeDoubleFigurePlots[1].scatter(periodPeakXVals, periodPeakYVals, color="red", s=10)  # TESTING SCATTER
+        # The below code is test code for plotting the CWT as a surface map
+        '''
+        X, Y = numpy.meshgrid(cwtXAxis, cwtYAxis)  # Create meshgrid for plotting
+        Z = numpy.array(cwtZAxis)  # Convert Z values into an array
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(X, Y, Z, cmap=appParameters["heatmap"])
+        ax.set_xlabel("Time (X-Axis)")
+        ax.set_ylabel("Period (Y-Axis)")
+        ax.set_zlabel("Amplitude (Z-Axis)")
+        fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+        plt.show()
+        '''
     if method == ["amplitudesWavelet", "frequenciesWavelet", "periodsYAxisWavelet"]:
         tubeDoubleFigurePlots[1].xaxis.set_major_locator(cwtXAxisLabels)
         tubeDoubleFigurePlots[1].set_ylim(15, 35)
@@ -1611,6 +1641,7 @@ def saveAllPlots():
                 newFigure.set_dpi(1200)
                 newFigure.savefig(plotFileName, dpi=1200)
             plt.close()
+    app.info("Operation complete", "All plots saved to " + plotSaveDir + ".")
 
 
 def saveDensitometryData():
@@ -1682,7 +1713,7 @@ def saveAllDensitometryData():
 
 
     dataSaveDir = app.select_folder(
-        title="Plots save directory",
+        title="Data save directory",
         folder=workingDir
     )
     
@@ -1731,6 +1762,7 @@ def saveAllDensitometryData():
                     features_string = "/".join(features)
                     newLine = [densitometryXValsHours[index], densitometryClipped[index], densityProfileSmooth[index], features_string]
                     rowWriter.writerow(newLine)  # Write row to file
+    app.info("Operation complete", "All data saved to " + dataSaveDir + ".")
 
 
 def saveAllDensitometryDataForEcho():
@@ -1745,7 +1777,7 @@ def saveAllDensitometryDataForEcho():
 
 
     dataSaveDir = app.select_folder(
-        title="Plots save directory",
+        title="Data save directory",
         folder=workingDir
     )
     
@@ -1790,6 +1822,7 @@ def saveAllDensitometryDataForEcho():
                 data_row = copy.deepcopy(densityProfileNoTimeMarks)
                 data_row.insert(0, setName + "_" + str(tubeNumber) + "_" + str(round(meanGrowthHoursPerPixel, 2)) + "hrsPerPixel")
                 rowWriter.writerow(data_row)
+    app.info("Operation complete", "All data saved to " + dataSaveDir + ".")
 
 
 def saveAggregateDensitometryData():

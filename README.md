@@ -128,6 +128,8 @@ Open graphics preferences (⌘P)<br />
 
 ---
 ## Changelog
+v0.4.2: Corrected for outliers and thresholding in calculation of CWT average periods. Corrected calculation of standard deviations (and SEM) to use sample, not population, formula.
+
 v0.4.1: Corrected major bugs in implementation of time-windowed analysis. Corrected minor bugs in graphics options.
 
 v0.3.1: Added further experimental features for bulk data handling. Minor updates to documentation.
