@@ -1,13 +1,13 @@
 Changelog
 ===============
 
-v0.4.2 (Latest)
+v0.4.3 (Latest)
 ---------------
 
-v0.4.2 (Stable)
+v0.4.3 (Stable)
 ---------------
 
-v0.4.2
+v0.4.3
 ---------------
 Corrected for outliers and thresholding in calculation of CWT average periods. Corrected calculation of standard deviations (and SEM) to use sample, not population, formula.
 
